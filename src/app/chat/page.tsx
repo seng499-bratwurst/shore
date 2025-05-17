@@ -1,11 +1,11 @@
 import Link from "next/link";
 
-export default function Home() {
+export default function Chat() {
   return (
     <>
-      <h1>Home</h1>
+      <h1>Chat</h1>
+      <Link href="/">Home</Link>
       <Link href="/admin">Admin</Link>
-      <Link href="/chat">Chat</Link>
       <Link href="/login">Login</Link>
     </>
   );
