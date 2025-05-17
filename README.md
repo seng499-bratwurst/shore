@@ -2,7 +2,7 @@
 
 This is the frontend for our project.
 
-## Usage
+## Development
 
 - **Configure**: Run `npm i` to download dependencies
 - **Start development environment**: `npm run dev`
