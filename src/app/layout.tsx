@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Fira_Code, Inter } from 'next/font/google';
+import React from 'react';
+import ReactDOM from 'react-dom';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -16,6 +18,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Import and configure axe-core for accessibility testing in development mode
+  if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') {
+    import('@axe-core/react').then((axe) => {
+      axe.default(React, ReactDOM, 1000);
+    });
+  }
   return (
     <html lang="en">
       <body className={`${inter.variable} ${firaCode.variable}`}>{children}</body>

@@ -1,6 +1,9 @@
 import '@testing-library/jest-dom';
 import { fireEvent, render } from '@testing-library/react';
+import { axe, toHaveNoViolations } from 'jest-axe';
 import { Button } from './button';
+
+expect.extend(toHaveNoViolations);
 
 describe('Button component', () => {
   it('renders the button with children', () => {
@@ -23,5 +26,11 @@ describe('Button component', () => {
   it('applies custom className', () => {
     const { getByRole } = render(<Button className="custom-class">Test</Button>);
     expect(getByRole('button')).toHaveClass('custom-class');
+  });
+
+  it('has no accessibility violations', async () => {
+    const { container } = render(<Button>Accessible</Button>);
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 });
