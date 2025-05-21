@@ -4,9 +4,11 @@ export default function Chat() {
   return (
     <>
       <h1>Chat</h1>
-      <Link href="/">Home</Link>
-      <Link href="/admin">Admin</Link>
-      <Link href="/login">Login</Link>
+      <div className="flex gap-3xl">
+        <Link href="/">Home</Link>
+        <Link href="/admin">Admin</Link>
+        <Link href="/login">Login</Link>
+      </div>
     </>
   );
 }

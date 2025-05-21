@@ -11,3 +11,10 @@ This is the frontend for our project.
   - All component tests: `npm run test:jest`
   - All e2e tests: `npm run test:playwright`
   - All tests (e2e and component): `npm run test`
+
+## VSCode Extensions
+
+To prevent unecesary warnings and to have an optimal dev experience, install the following VSCode extensions:
+
+- "Tailwind CSS IntelliSense"
+- "PostCSS Language Support"
