@@ -3,6 +3,7 @@ import { Fira_Code, Inter } from 'next/font/google';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './globals.css';
+import Navbar from '@/components/nav/navbar';
 
 export const metadata: Metadata = {
   title: 'Shore',
@@ -26,7 +27,10 @@ export default function RootLayout({
   }
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${firaCode.variable}`}>{children}</body>
+      <body className={`${inter.variable} ${firaCode.variable}`}>
+        <Navbar />
+        {children}
+      </body>
     </html>
   );
 }
