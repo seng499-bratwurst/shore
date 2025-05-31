@@ -7,17 +7,17 @@ import Image from 'next/image';
 
 export default function Navbar() {
   return (
-    <nav className="flex items-center justify-between p-4 bg-[var(--color-neutral-800)] w-full h-16 relative">
+    <nav className="flex items-center justify-between p-4 bg-[var(--color-neutral-100)] w-full h-16 relative">
       <div className="flex items-center">
         <Image src={onc_logo} alt="Ocean Networks Canada" className="h-16 w-auto mr-4 "  />
-        <h1 className="text-2xl text-[var(--color-neutral-100)] font-bold">Astrolabe</h1>
+        <h1 className="text-2xl text-[var(--color-neutral-900)] font-bold">Astrolabe</h1>
       </div>
       <div className="space-x-4">
-        <Link className="text-[var(--color-neutral-100)] " href="/login">
+        <Link className="text-[var(--color-neutral-900)] " href="/login">
             Log In
         </Link>
         <Link href="/login">
-            <Button className="bg-[var(--color-primary-400)] text-white px-4 py-2 rounded">Register</Button>
+            <Button className="bg-[var(--color-primary-400)] text-[var(--color-neutral-900)] px-4 py-2 rounded">Register</Button>
         </Link>
       </div>
     </nav>
