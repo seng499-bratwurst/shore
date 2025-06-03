@@ -188,5 +188,6 @@
 
   button {
     cursor: pointer;
+    background-color: var(--color-brand-primary)
   }
 }
