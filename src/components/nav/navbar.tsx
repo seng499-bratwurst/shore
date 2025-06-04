@@ -1,7 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '../ui/button/button'
-import onc_logo from './onc_logo.png';
 import Image from 'next/image';
 
 
@@ -9,7 +8,7 @@ export default function Navbar() {
   return (
     <nav className="flex items-center justify-between p-4 bg-neutral-100 w-full h-16 relative shadow-sm">
       <div className="flex items-center">
-        <Image src={onc_logo} alt="Ocean Networks Canada" className="h-16 w-auto mr-4 "  />
+        <Image src={'/onc_logo.png'} width={64} height={64} alt="Ocean Networks Canada" className="h-16 w-auto mr-4 "  />
         <h1 className="text-2xl text-neutral-900 font-bold">Astrolabe</h1>
       </div>
       <div className="space-x-4">
