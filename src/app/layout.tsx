@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ThemeProvider } from 'next-themes';
 import { Fira_Code, Inter } from 'next/font/google';
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -25,8 +26,18 @@ export default function RootLayout({
     });
   }
   return (
-    <html lang="en">
-      <body className={`${inter.variable} ${firaCode.variable}`}>{children}</body>
+    // suppressHydrationWarning is recommended by shadcn
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} ${firaCode.variable}`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
