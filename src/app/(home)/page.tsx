@@ -1,76 +1,35 @@
 import { Button } from '@/components/ui/button/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card/card';
-import { Input } from '@/components/ui/input/input';
-import { Textarea } from '@/components/ui/textarea/textarea';
-import { Label } from '@/components/ui/typography/label';
-import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div>
-      <nav aria-label="Main navigation">
-        <ul className="flex gap-3xl list-none p-0 m-0">
-          <li>
-            <Link href="/admin">Admin</Link>
-          </li>
-          <li>
-            <Link href="/chat">Chat</Link>
-          </li>
-          <li>
-            <Link href="/login">Login</Link>
-          </li>
-        </ul>
-      </nav>
-      <div className="flex flex-col w-full align-center justify-center p-3xl">
-        <div className="mt-8 flex gap-4">
-          <Button variant="default">Default</Button>
-          <Button variant="secondary">Secondary</Button>
-          <Button variant="destructive">Error</Button>
-          <Button variant="outline">Outline</Button>
-          <Button variant="ghost">Ghost</Button>
-        </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Welcome to Shore</CardTitle>
-            <CardDescription>
-              An LLM powered interface to data from Ocean Networks Canada's Cambridge Bay Coastal
-              Community Observatory.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-lg">
-              <div className="flex flex-col gap-xs">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" placeholder="Enter your name" />
-              </div>
-              <div className="flex flex-col gap-xs">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="Enter your email" />
-              </div>
-              <div className="flex flex-col gap-xs">
-                <Label htmlFor="message">Message</Label>
-                <Textarea id="message" placeholder="Enter your message" />
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-end">
-            <div className="flex gap-xs">
-              <Button variant="ghost" size="sm">
-                Cancel
-              </Button>
-              <Button variant="ghost" size="sm">
-                Submit
-              </Button>
-            </div>
-          </CardFooter>
-        </Card>
+    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-primary-300 text-neutral-900 flex flex-col items-center justify-center p-4">
+      {/* Main Content */}
+      <div className="text-center max-w-[42rem]">
+        {/* Purple Title Box */}
+        <h1 className="bg-secondary-400 text-2xl font-bold py-2 px-4 mb-4 items-center ">
+          Where Ocean Data Meets Intelligence
+        </h1>
+
+        {/* Description Text Box */}
+        <p className="text-lg mb-6">
+          Our chat-based application answers questions using real-time and historical ocean data
+          from Ocean Networks Canada. It provides accessible, science-backed insights drawn directly
+          from the ocean floor to your fingertips.
+        </p>
+
+        {/* Blue Chat Button */}
+        <a href="/chat">
+          <Button className="bg-brand-primary text-neutral-900  font-semibold py-2 px-6 rounded hover:bg-primary-600 transition">
+            Start Chat Now
+          </Button>
+        </a>
+
+        {/* Territorial Acknowledgement */}
+        <p className="mt-8 italic pt-14">
+          We acknowledge with respect that the Cambridge Bay coastal community observatory is
+          located on the lands and in the waters of the Inuit, in Iqaluktuuttiaq (Cambridge Bay) in
+          the Kitikmeot Region of Nunavut.{' '}
+        </p>
       </div>
     </div>
   );
