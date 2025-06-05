@@ -24,9 +24,8 @@ export default function Home() {
         </a>
 
         {/* Territorial Acknowledgement */}
-        <p className="mt-8 text-sm italic max-w-md mx-auto pt-10">
-          We acknowledge the unceded territory of the Inuit people and their continued presence in the area, recognizing their stewardship of the land and their cultural ties to the region.
-        </p>
+        <p className="mt-8 italic pt-14">
+          We acknowledge with respect that the Cambridge Bay coastal community observatory is located on the lands and in the waters of the Inuit, in Iqaluktuuttiaq (Cambridge Bay) in the Kitikmeot Region of Nunavut.        </p>
       </div>
     </div>
   );
