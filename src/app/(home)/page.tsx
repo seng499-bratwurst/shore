@@ -2,11 +2,11 @@ import { Button } from '@/components/ui/button/button';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-primary-300 text-neutral-900 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-primary-100 dark:from-primary-900 dark:to-primary-950 text-foreground flex flex-col items-center justify-center p-4">
       {/* Main Content */}
       <div className="text-center max-w-[42rem]">
         {/* Purple Title Box */}
-        <h1 className="bg-secondary-400 text-2xl font-bold py-2 px-4 mb-4 items-center ">
+        <h1 className="bg-secondary text-2xl font-bold py-2 px-4 mb-4 items-center text-secondary-foreground">
           Where Ocean Data Meets Intelligence
         </h1>
 
@@ -19,7 +19,7 @@ export default function Home() {
 
         {/* Blue Chat Button */}
         <a href="/chat">
-          <Button className="bg-brand-primary text-neutral-900  font-semibold py-2 px-6 rounded hover:bg-primary-600 transition">
+          <Button size="lg" className="font-bold">
             Start Chat Now
           </Button>
         </a>

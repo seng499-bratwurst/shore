@@ -9,7 +9,7 @@
   --font-inter: var(--font-inter);
 
   /* Brand colors */
-  --color-brand-primary: #0b9ec0;
+  --color-brand-primary: #65bff7;
   --color-brand-secondary: #a045ce;
   --color-success: #73c322;
   --color-error: #d41111;
@@ -134,13 +134,13 @@
 /* Light mode defaults */
 :root {
   --background: var(--color-primary-50);
-  --foreground: var(--color-primary-950);
+  --foreground: var(--color-primary-900);
 
-  --primary: var(--color-primary-600);
-  --primary-foreground: var(--color-primary-50);
+  --primary: var(--color-primary-400);
+  --primary-foreground: var(--color-primary-800);
 
-  --secondary: var(--color-secondary-600);
-  --secondary-foreground: var(--color-secondary-50);
+  --secondary: var(--color-secondary-400);
+  --secondary-foreground: var(--color-secondary-950);
 
   --destructive: var(--color-error);
 
@@ -172,11 +172,11 @@
   --background: var(--color-primary-900);
   --foreground: var(--color-primary-50);
 
-  --primary: var(--color-primary-600);
-  --primary-foreground: var(--color-primary-50);
+  --primary: var(--color-primary-800);
+  --primary-foreground: var(--color-primary-200);
 
-  --secondary: var(--color-secondary-600);
-  --secondary-foreground: var(--color-secondary-50);
+  --secondary: var(--color-secondary-800);
+  --secondary-foreground: var(--color-secondary-200);
 
   --destructive: var(--color-error);
 
