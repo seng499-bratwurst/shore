@@ -1,19 +1,32 @@
 import Link from 'next/link';
+import { Button } from '@/components/ui/button/button';
 
 export default function Home() {
   return (
-    <nav aria-label="Main navigation">
-      <ul className="flex gap-3xl list-none p-0 m-0">
-        <li>
-          <Link href="/admin">Admin</Link>
-        </li>
-        <li>
-          <Link href="/chat">Chat</Link>
-        </li>
-        <li>
-          <Link href="/login">Login</Link>
-        </li>
-      </ul>
-    </nav>
+    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-primary-300 text-neutral-900 flex flex-col items-center justify-center p-4">
+      {/* Main Content */}
+      <div className="text-center max-w-[42rem]">
+        {/* Purple Title Box */}
+        <h1 className="bg-secondary-400 text-2xl font-bold py-2 px-4 mb-4 items-center ">
+          Where Ocean Data Meets Intelligence
+        </h1>
+
+        {/* Description Text Box */}
+        <p className="text-lg mb-6">
+          Our chat-based application answers questions using real-time and historical ocean data from Ocean Networks Canada. It provides accessible, science-backed insights drawn directly from the ocean floor to your fingertips.
+        </p>
+
+        {/* Blue Chat Button */}
+        <a href="/chat">
+          <Button className="bg-brand-primary text-neutral-900  font-semibold py-2 px-6 rounded hover:bg-primary-600 transition">
+            Start Chat Now
+          </Button>
+        </a>
+
+        {/* Territorial Acknowledgement */}
+        <p className="mt-8 italic pt-14">
+          We acknowledge with respect that the Cambridge Bay coastal community observatory is located on the lands and in the waters of the Inuit, in Iqaluktuuttiaq (Cambridge Bay) in the Kitikmeot Region of Nunavut.        </p>
+      </div>
+    </div>
   );
 }
