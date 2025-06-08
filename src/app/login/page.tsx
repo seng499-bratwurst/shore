@@ -1,3 +1,5 @@
+import { LoginForm } from '@/features/auth/login/login-form';
+import { SignUpForm } from '@/features/auth/sign-up/sign-up-form';
 import Link from 'next/link';
 
 export default function Login() {
@@ -16,6 +18,10 @@ export default function Login() {
           </li>
         </ul>
       </nav>
+      <div className="flex flex-col items-center space-y-4 p-4">
+        <LoginForm />
+        <SignUpForm />
+      </div>
     </>
   );
 }
