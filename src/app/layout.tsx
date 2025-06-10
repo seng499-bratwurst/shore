@@ -1,8 +1,9 @@
+import '@/app/globals.css';
+import { AppProvider } from '@/app/provider';
 import type { Metadata } from 'next';
 import { Fira_Code, Inter } from 'next/font/google';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './globals.css';
 import Navbar from '@/components/nav/navbar';
 
 export const metadata: Metadata = {
@@ -26,10 +27,11 @@ export default function RootLayout({
     });
   }
   return (
-    <html lang="en">
+    // suppressHydrationWarning is recommended by shadcn
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${firaCode.variable}`}>
         <Navbar />
-        {children}
+        <AppProvider>{children}</AppProvider>
       </body>
     </html>
   );
