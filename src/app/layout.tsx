@@ -1,8 +1,9 @@
+import '@/app/globals.css';
+import { AppProvider } from '@/app/provider';
 import type { Metadata } from 'next';
 import { Fira_Code, Inter } from 'next/font/google';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Shore',
@@ -25,8 +26,11 @@ export default function RootLayout({
     });
   }
   return (
-    <html lang="en">
-      <body className={`${inter.variable} ${firaCode.variable}`}>{children}</body>
+    // suppressHydrationWarning is recommended by shadcn
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} ${firaCode.variable}`}>
+        <AppProvider>{children}</AppProvider>
+      </body>
     </html>
   );
 }
