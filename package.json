@@ -28,6 +28,7 @@
     "postcss": "^8.5.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "styled-jsx": "^5.1.7",
     "tailwindcss": "^4.1.7",
     "yup": "^1.6.1"
   },
