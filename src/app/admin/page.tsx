@@ -26,11 +26,9 @@ export default function AdminPage() {
   return (
     <div className="px-14 text-neutral-800">
       <div className="flex justify-end mb-4">
-      <Button className="mb-4 px-4 py-2 bg-neutral-300 hover:bg-neutral-400 rounded">View Logs</Button>
+        <Button className="mb-4 px-4 py-2 bg-neutral-300 hover:bg-neutral-400 rounded">View Logs</Button>
       </div>
-      <div className="bg-neutral-50 shadow rounded p-6">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-semibold mb-2">Document Management</h2>
+      <div className="flex justify-between mb-2">
           <div className="space-x-2">
             <button 
               onClick={() => setShowModal(true)}
@@ -43,6 +41,9 @@ export default function AdminPage() {
             <UploadModal isOpen={showModal} onClose={() => setShowModal(false)} />
           </div>
         </div>
+      <div className="bg-neutral-50 shadow rounded p-6">
+        
+          <h2 className="text-xl font-semibold mb-2">Document Management</h2>
         <table className="w-full table-auto border-t border-neutral-200">
           <tbody>
             {documents.map((doc, idx) => (
