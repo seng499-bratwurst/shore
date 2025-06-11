@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button/button';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-primary-100 dark:from-primary-900 dark:to-primary-950 text-foreground flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-primary-200 dark:from-primary-900 dark:to-primary-700 dark:from-primary-900 dark:to-primary-950 text-foreground flex flex-col items-center justify-center p-4">
       {/* Main Content */}
       <div className="text-center max-w-[42rem]">
         {/* Purple Title Box */}
