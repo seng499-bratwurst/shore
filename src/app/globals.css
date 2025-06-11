@@ -147,6 +147,9 @@
   --accent: var(--color-primary-100);
   --acccent-foreground: var(--color-primary-950);
 
+  --popover: var(--background);
+  --popover-foreground: var(--foreground);
+
   --card: var(--color-primary-50);
   --card-foreground: var(--color-primary-950);
 
@@ -183,8 +186,11 @@
   --accent: var(--color-primary-100);
   --accent-foreground: var(--color-primary-950);
 
-  --card: var(--color-primary-900);
-  --card-foreground: var(--color-primary-50);
+  --popover: var(--color-primary-900);
+  --popover-foreground: var(--color-primary-50);
+
+  --card: var(--background);
+  --card-foreground: var(--foreground);
 
   --muted: var(--color-primary-100);
   --muted-foreground: var(--color-primary-50);
@@ -213,8 +219,8 @@
   --color-card: var(--card);
   --color-card-foreground: var(--color-foreground);
 
-  --color-popover: var(--color-primary-100);
-  --color-popover-foreground: var(--color-primary-950);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
 
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -257,11 +263,6 @@
 
   h1 {
     @apply text-5xl;
-  }
-
-  a {
-    @apply text-secondary transition-colors hover:text-secondary/80;
-    transition: color var(--transition-snappy);
   }
 
   button {

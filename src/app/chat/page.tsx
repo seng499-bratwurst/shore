@@ -1,3 +1,4 @@
+import { GraphChat } from '@/features/graph-chat/graph-chat';
 import Link from 'next/link';
 
 export default function Chat() {
@@ -16,6 +17,7 @@ export default function Chat() {
           </li>
         </ul>
       </nav>
+      <GraphChat />
     </>
   );
 }
