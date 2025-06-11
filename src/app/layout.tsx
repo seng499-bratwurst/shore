@@ -30,8 +30,12 @@ export default function RootLayout({
     // suppressHydrationWarning is recommended by shadcn
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${firaCode.variable}`}>
-        <Navbar />
-        <AppProvider>{children}</AppProvider>
+        <header>
+          <Navbar />
+        </header>
+        <main>
+          <AppProvider>{children}</AppProvider>
+        </main>
       </body>
     </html>
   );
