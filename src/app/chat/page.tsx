@@ -1,4 +1,4 @@
-import { GraphChat } from '@/features/graph-chat/graph-chat';
+import { GraphChat } from '@/features/graph-chat/components/graph-chat';
 import Link from 'next/link';
 
 export default function Chat() {

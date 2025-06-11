@@ -255,6 +255,12 @@
   --radius: 0.625rem;
 }
 
+@layer components {
+  .handle {
+    @apply !bg-card !border-neutral-200 dark:!border-neutral-700 !w-sm !h-sm z-10;
+  }
+}
+
 @layer base {
   html,
   body {

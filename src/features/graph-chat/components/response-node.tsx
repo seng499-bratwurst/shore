@@ -1,12 +1,13 @@
 import { Button } from '@/components/ui/button/button';
+import { NodeEdgeControls } from '@/features/graph-chat/components/node-edge-controls';
+import { NodeHandles } from '@/features/graph-chat/components/node-handles';
 import type { Node, NodeProps } from '@xyflow/react';
 import React, { useState } from 'react';
 import { FiDownload, FiThumbsDown, FiThumbsUp } from 'react-icons/fi';
-import { NodeHandles } from './node-handles';
 
-type Source = { name: string; url: string };
-type AnswerNodeType = Node<{ sources: Source[] }>;
+type ResponseNodeType = Node<{ sources: { name: string; url: string }[] }>;
 
+// Dummy temperature data until we get LLM integrated
 const tempData = [
   ['11:00am', -10],
   ['12:00pm', -9],
@@ -15,17 +16,20 @@ const tempData = [
   ['3:00pm', -3],
 ];
 
-const AnswerNode: React.FC<NodeProps<AnswerNodeType>> = ({ data }) => {
+const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
   const [thumb, setThumb] = useState<'up' | 'down' | null>(null);
+  const { data } = props;
 
   return (
     <div className="relative bg-card text-card-foreground rounded-b-lg shadow-md flex flex-col min-w-[100px] max-w-[300px]">
       <NodeHandles />
+      <NodeEdgeControls {...props} />
       <div className="bg-secondary text-secondary-foreground w-full text-sm px-sm py-2xs">
-        Answer
+        Response
       </div>
       <div className="flex flex-col px-sm space-y-xs mt-xs">
         <div className="text-sm">Here is the temperature data from March 8th 2024:</div>
+        {/* Temporary table placeholder until we determine how we will actually display visual results */}
         <table className="text-sm w-full border-collapse">
           <thead>
             <tr>
@@ -50,7 +54,7 @@ const AnswerNode: React.FC<NodeProps<AnswerNodeType>> = ({ data }) => {
             ))}
           </tbody>
         </table>
-        <div className="text-2xs text-grey-700">
+        <div className="text-2xs text-card-foreground">
           Source{data.sources.length > 1 ? 's' : ''}:{' '}
           {data.sources.map((source, index) => (
             <span key={index}>
@@ -99,4 +103,4 @@ const AnswerNode: React.FC<NodeProps<AnswerNodeType>> = ({ data }) => {
   );
 };
 
-export { AnswerNode };
+export { ResponseNode };
