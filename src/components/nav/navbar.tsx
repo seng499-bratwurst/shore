@@ -12,11 +12,11 @@ export default function Navbar() {
         <h1 className="text-2xl text-neutral-900 dark:text-neutral-50 font-bold">Astrolabe</h1>
       </div>
       <div className="space-x-4">
-        <Link className="text-neutral-900 dark:text-neutral-50" href="/login">
-            Log In
+        <Link  href="/login">
+            <Button className="bg-primary-50 dark:bg-primary-900 hover:bg-primary-200 dark:text-neutral-50 text-neutral-900 px-4 py-2">Log in</Button>
         </Link>
         <Link href="/login">
-            <Button className="bg-primary-500 text-neutral-900 px-4 py-2 rounded">Register</Button>
+            <Button className="bg-primary-500 hover:bg-primary-600 text-neutral-900 px-4 py-2 ">Sign Up</Button>
         </Link>
       </div>
     </nav>
