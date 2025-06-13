@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { Fira_Code, Inter } from 'next/font/google';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import Navbar from '@/components/nav/navbar';
 
 export const metadata: Metadata = {
   title: 'Shore',
@@ -29,7 +30,10 @@ export default function RootLayout({
     // suppressHydrationWarning is recommended by shadcn
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${firaCode.variable}`}>
-        <AppProvider>{children}</AppProvider>
+        <header>
+          <Navbar />
+        </header>
+          <AppProvider>{children}</AppProvider>
       </body>
     </html>
   );
