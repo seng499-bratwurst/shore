@@ -4,14 +4,20 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button/button';
 import { Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow, } from '@/components/ui/table/table';
-import { Dialog } from '@/components/ui/dialog/dialog';
-import UploadModal from '@/components/ui/upload/upload';
-
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog/dialog"
 type Document = {
   name: string;
   uploadDate: string;
@@ -22,7 +28,6 @@ type Document = {
 
 export default function AdminPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,17 +45,7 @@ export default function AdminPage() {
         <Button className="mb-4 px-4 py-2 bg-neutral-300 hover:bg-neutral-400 rounded">View Logs</Button>
       </div>
       <div className="flex justify-between mb-2">
-          <div className="space-x-2">
-            <button 
-              onClick={() => setShowModal(true)}
-            >
-              Upload
-            </button>
-            <button className='px-4'>
-              Delete
-            </button>
-            <UploadModal isOpen={showModal} onClose={() => setShowModal(false)} />
-          </div>
+          
         </div>
       <div className="bg-neutral-50 shadow rounded p-6">
         
@@ -76,19 +71,33 @@ export default function AdminPage() {
             ))}
           </TableBody>
         </Table>
-        {/* <table className="w-full table-auto border-t border-neutral-200">
-          <tbody>
-            {documents.map((doc, idx) => (
-              <tr key={idx} className="border-t border-neutral-200">
-                <td className="p-2"><input type="checkbox" /></td>
-                <td className="p-2 ">{doc.name}</td>
-                <td className="p-2 text-neutral-400 text-right">{doc.uploadDate}</td>
-                <td className="p-2 text-right">...</td>
-              </tr>
-            ))}
-          </tbody>
-        </table> */}
       </div>
+      <div className="flex justify-end mt-4 space-x-2">
+            <Dialog >
+              <DialogTrigger >Upload</DialogTrigger>
+              <DialogContent className="sm:max-w-md" >
+                
+                <DialogHeader>
+                  <DialogTitle>Upload Files</DialogTitle>
+                </DialogHeader>
+                <div className="border-2 border-dashed border-neutral-400 p-8 text-center mb-4 rounded">
+                  <p>Choose a file or drag and drop it here</p>
+                  <p className="text-sm text-neutral-500 mt-2">MD, TXT, and PDF formats, maximum size of 50MB</p>
+                </div>
+                <DialogFooter>
+                  <DialogClose asChild>
+                  <Button type="button" variant="secondary">
+                    Close
+                  </Button>
+                </DialogClose>
+                </DialogFooter>
+                
+              </DialogContent>
+            </Dialog>
+            <button className='px-4'>
+              Delete
+            </button>
+          </div>
     </div>
   );
 }
