@@ -2,7 +2,7 @@
   {
     "name": "data_for_sensor_1.md",
     "uploadDate": "2025-02-02",
-    "positiveRatings": 95,
+    "positiveRatings": 950,
     "negativeRatings": 90,
     "queries": 101
   },
@@ -16,22 +16,22 @@
   {
     "name": "secretPasswords.md",
     "uploadDate": "2025-02-02",
-    "positiveRatings": 95,
+    "positiveRatings": 9,
     "negativeRatings": 90,
     "queries": 101
   },
   {
     "name": "data_for_sensor_2.md",
     "uploadDate": "2025-02-02",
-    "positiveRatings": 95,
+    "positiveRatings": 150,
     "negativeRatings": 90,
     "queries": 101
   },
   {
     "name": "file.txt",
     "uploadDate": "2025-02-02",
-    "positiveRatings": 95,
-    "negativeRatings": 90,
+    "positiveRatings": 905,
+    "negativeRatings": 950,
     "queries": 101
   }
 ]

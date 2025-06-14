@@ -42,21 +42,21 @@ export default function AdminPage() {
   return (
     <div className="px-14 text-neutral-800">
       <div className="flex justify-end mb-4">
-        <Button className="mb-4 px-4 py-2 bg-neutral-300 hover:bg-neutral-400 rounded">View Logs</Button>
+        <Button className="mb-4 px-4 py-2  rounded">View Logs</Button>
       </div>
       <div className="flex justify-between mb-2">
           
         </div>
-      <div className="bg-neutral-50 shadow rounded p-6">
+      <div className="bg-neutral-50 shadow rounded p-6 overflow-y-auto max-h-[350px]">
         
         <h2 className="text-xl font-semibold mb-2">Document Management</h2>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Document</TableHead>
-              <TableHead>Positive Rate</TableHead>
-              <TableHead>Query Count</TableHead>
-              <TableHead>Upload Date</TableHead>
+              <TableHead className="text-center">Positive Rate</TableHead>
+              <TableHead className="text-center">Query Count</TableHead>
+              <TableHead className="text-center">Upload Date</TableHead>
             </TableRow>
 
           </TableHeader>
@@ -64,15 +64,19 @@ export default function AdminPage() {
             {documents.map((doc, indx) => (
               <TableRow key={indx} >
                 <TableCell>{doc.name}</TableCell>
-                <TableCell>{doc.positiveRatings / (doc.positiveRatings + doc.negativeRatings)}%</TableCell>
-                <TableCell>{doc.queries}</TableCell>
-                <TableCell>{doc.uploadDate}</TableCell>
+                <TableCell  className={` text-center ${
+                  (doc.positiveRatings / (doc.positiveRatings + doc.negativeRatings)) < 0.5
+                    ? "text-red-600"
+                    : "text-green-600"
+                }`}>{(100 * doc.positiveRatings / (doc.positiveRatings + doc.negativeRatings)).toFixed(2)}%</TableCell>
+                <TableCell className="text-center">{doc.queries}</TableCell>
+                <TableCell className="text-center">{doc.uploadDate}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
-      <div className="flex justify-end mt-4 space-x-2">
+      <div className="flex justify-end mt-4 space-x-2 dark:text-neutral-50">
             <Dialog >
               <DialogTrigger >Upload</DialogTrigger>
               <DialogContent className="sm:max-w-md" >
