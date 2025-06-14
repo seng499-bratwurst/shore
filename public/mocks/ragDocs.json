@@ -1,22 +1,37 @@
 [
   {
     "name": "data_for_sensor_1.md",
-    "uploadDate": "2025-02-02"
+    "uploadDate": "2025-02-02",
+    "positiveRatings": 95,
+    "negativeRatings": 90,
+    "queries": 101
   },
   {
     "name": "coolDoc1.txt",
-    "uploadDate": "2025-02-02"
+    "uploadDate": "2025-02-02",
+    "positiveRatings": 95,
+    "negativeRatings": 90,
+    "queries": 101
   },
   {
     "name": "secretPasswords.md",
-    "uploadDate": "2025-02-02"
+    "uploadDate": "2025-02-02",
+    "positiveRatings": 95,
+    "negativeRatings": 90,
+    "queries": 101
   },
   {
     "name": "data_for_sensor_2.md",
-    "uploadDate": "2025-02-02"
+    "uploadDate": "2025-02-02",
+    "positiveRatings": 95,
+    "negativeRatings": 90,
+    "queries": 101
   },
   {
     "name": "file.txt",
-    "uploadDate": "2025-02-02"
+    "uploadDate": "2025-02-02",
+    "positiveRatings": 95,
+    "negativeRatings": 90,
+    "queries": 101
   }
 ]

@@ -2,11 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button/button';
+import { Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow, } from '@/components/ui/table/table';
+import { Dialog } from '@/components/ui/dialog/dialog';
 import UploadModal from '@/components/ui/upload/upload';
 
 type Document = {
   name: string;
   uploadDate: string;
+  positiveRatings: number;
+  negativeRatings: number;
+  queries: number;
 };
 
 export default function AdminPage() {
@@ -43,8 +54,29 @@ export default function AdminPage() {
         </div>
       <div className="bg-neutral-50 shadow rounded p-6">
         
-          <h2 className="text-xl font-semibold mb-2">Document Management</h2>
-        <table className="w-full table-auto border-t border-neutral-200">
+        <h2 className="text-xl font-semibold mb-2">Document Management</h2>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Document</TableHead>
+              <TableHead>Positive Rate</TableHead>
+              <TableHead>Query Count</TableHead>
+              <TableHead>Upload Date</TableHead>
+            </TableRow>
+
+          </TableHeader>
+          <TableBody>
+            {documents.map((doc, indx) => (
+              <TableRow key={indx} >
+                <TableCell>{doc.name}</TableCell>
+                <TableCell>{doc.positiveRatings / (doc.positiveRatings + doc.negativeRatings)}%</TableCell>
+                <TableCell>{doc.queries}</TableCell>
+                <TableCell>{doc.uploadDate}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        {/* <table className="w-full table-auto border-t border-neutral-200">
           <tbody>
             {documents.map((doc, idx) => (
               <tr key={idx} className="border-t border-neutral-200">
@@ -55,7 +87,7 @@ export default function AdminPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table> */}
       </div>
     </div>
   );
