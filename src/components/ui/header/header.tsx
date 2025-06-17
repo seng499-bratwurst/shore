@@ -6,7 +6,7 @@ import { Button } from '../button/button';
 
 import { LoginForm } from '@/features/auth/components/login-form';
 import { SignUpForm } from '@/features/auth/components/sign-up-form';
-import { useAuthStore } from '@/stores/auth-store';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 import {
   Dialog,
   DialogContent,

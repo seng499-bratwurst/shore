@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/stores/auth-store';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 import axios from 'axios';
 
 // An axios instance configured for the Rift backend

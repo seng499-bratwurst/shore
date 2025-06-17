@@ -1,5 +1,5 @@
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { api } from '@/lib/axios';
-import { useAuthStore } from '@/stores/auth-store';
 import { useMutation } from '@tanstack/react-query';
 import { z } from 'zod';
 import { AuthResponse } from '../types/auth';
