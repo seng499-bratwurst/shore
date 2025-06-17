@@ -11,9 +11,6 @@ export default function Admin() {
           <li>
             <Link href="/chat">Chat</Link>
           </li>
-          <li>
-            <Link href="/login">Login</Link>
-          </li>
         </ul>
       </nav>
     </>
