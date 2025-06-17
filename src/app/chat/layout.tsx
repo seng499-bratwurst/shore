@@ -4,16 +4,16 @@ import { AppSidebar } from "@/components/ui/sidebar/app-sidebar"
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider>
-      <div className='flex min-h screen relative'>
-        <div >
-          <AppSidebar />
+<SidebarProvider>
+      <div className="flex min-h-screen">
+        <div className="hidden md:block ">
+          <AppSidebar  />
         </div>
-        <div >
-          <div >
-            <h1>Chat Section <SidebarTrigger /></h1>            
-          </div>
-          <main className="p-4">{children}</main>
+        <div className="flex-1 flex flex-col w-screen">
+          <SidebarTrigger />
+          <main className="flex-1 ">
+            {children}
+          </main>
         </div>
       </div>
     </SidebarProvider>

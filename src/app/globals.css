@@ -278,12 +278,11 @@
 
 
   [data-sidebar=sidebar] {
-    width: 16rem !important; /* 256px */
     height: auto !important;
-    min-height: 12rem !important; /* 192px */
-    max-height: 24rem !important; /* 384px */
-    margin-top: 4.5rem !important; /* 72px, assuming 64px navbar + 8px gap */
-    margin-left: 1rem !important; /* 16px */
+    min-height: 12rem !important; 
+    max-height: 36rem !important; 
+    margin-top: 4rem !important; 
+    margin-left: 1rem !important; 
     overflow-y: auto !important;
   }
 }

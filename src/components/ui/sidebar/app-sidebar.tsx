@@ -37,7 +37,7 @@ export function AppSidebar() {
         >
       <SidebarHeader>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">History</h2>
+          <h2 className="text-lg font-semibold">Chat History</h2>
           <button className="text-muted-foreground hover:text-foreground">
             <Plus size={16} />
           </button>
