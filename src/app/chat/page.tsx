@@ -12,9 +12,6 @@ export default function Chat() {
           <li>
             <Link href="/admin">Admin</Link>
           </li>
-          <li>
-            <Link href="/login">Login</Link>
-          </li>
         </ul>
       </nav>
       <GraphChat />
