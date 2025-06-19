@@ -22,6 +22,7 @@ export type File = z.infer<typeof fileItemSchema>;
 
 // Define the Document type for the table
 export type Document = {
+  id: number;
   name: string;
   uploadDate: string;
   positiveRatings: number;

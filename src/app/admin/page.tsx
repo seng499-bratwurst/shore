@@ -14,24 +14,29 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog/dialog";
+import { Checkbox } from '@/components/ui/checkbox/checkbox';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs/tabs";
 import { Input } from '@/components/ui/input/input';
 import { Document, useFiles } from '@/features/admin/api/file';
 import { useUploadFile } from '@/features/admin/api/upload';
+import { useDeleteFile } from '@/features/admin/api/deleteFile';
 
 export default function AdminPage() {
   const { data: files = [], isLoading, error } = useFiles();
   const uploadFileMutation = useUploadFile();
+  const deleteFileMutation = useDeleteFile();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFileIds, setSelectedFileIds] = useState<number[]>([]);
 
   // Transform API data to match Document type for the table
   const documents: Document[] = files.map(file => ({
+    id: file.id,
     name: file.fileName,
     uploadDate: new Date(file.createdAt).toLocaleDateString(),
     positiveRatings: 0, // Placeholder: Update with actual data if available
@@ -39,7 +44,7 @@ export default function AdminPage() {
     queries: 0, // Placeholder: Update with actual data if available
   }));
 
-  // Handle file selection
+  // Handle file selection for upload
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
     setSelectedFile(file);
@@ -57,6 +62,27 @@ export default function AdminPage() {
         },
       });
     }
+  };
+
+  // Handle checkbox toggle for file selection
+  const handleCheckboxChange = (fileId: number, checked: boolean) => {
+    setSelectedFileIds(prev =>
+      checked ? [...prev, fileId] : prev.filter(id => id !== fileId)
+    );
+  };
+
+  // Handle delete button click
+  const handleDelete = () => {
+    selectedFileIds.forEach(fileId => {
+      deleteFileMutation.mutate(fileId, {
+        onSuccess: () => {
+          setSelectedFileIds(prev => prev.filter(id => id !== fileId));
+        },
+        onError: (error) => {
+          console.error('Delete error:', error.message);
+        },
+      });
+    });
   };
 
   if (isLoading) {
@@ -82,6 +108,7 @@ export default function AdminPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[50px]"></TableHead>
                   <TableHead>Document</TableHead>
                   <TableHead className="text-center">Positive Rate</TableHead>
                   <TableHead className="text-center">Query Count</TableHead>
@@ -89,8 +116,16 @@ export default function AdminPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {documents.map((doc, idx) => (
-                  <TableRow key={idx}>
+                {documents.map((doc) => (
+                  <TableRow key={doc.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedFileIds.includes(doc.id)}
+                        onCheckedChange={(checked) =>
+                          handleCheckboxChange(doc.id, !!checked)
+                        }
+                      />
+                    </TableCell>
                     <TableCell>{doc.name}</TableCell>
                     <TableCell
                       className={`text-center ${
@@ -150,9 +185,14 @@ export default function AdminPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            <button className='px-4'>
-              Delete
-            </button>
+            <Button
+              variant="outline"
+              disabled={selectedFileIds.length === 0 || deleteFileMutation.isPending}
+              onClick={handleDelete}
+              className='px-4'
+            >
+              {deleteFileMutation.isPending ? 'Deleting...' : 'Delete'}
+            </Button>
           </div>
         </TabsContent>
         <TabsContent value="topics">
@@ -167,8 +207,8 @@ export default function AdminPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {documents.map((doc, idx) => (
-                  <TableRow key={idx}>
+                {documents.map((doc) => (
+                  <TableRow key={doc.id}>
                     <TableCell>{doc.name}</TableCell>
                     <TableCell
                       className={`text-center ${
