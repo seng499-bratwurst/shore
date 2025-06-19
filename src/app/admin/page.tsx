@@ -14,6 +14,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -26,9 +27,11 @@ import { Input } from '@/components/ui/input/input';
 import { Document, useFiles } from '@/features/admin/api/file';
 import { useUploadFile } from '@/features/admin/api/upload';
 import { useDeleteFile } from '@/features/admin/api/deleteFile';
+import { dummyTopics, Topic } from '@/features/admin/data/topicsDummyData';
+import { AxiosError } from "axios";
 
 export default function AdminPage() {
-  const { data: files = [], isLoading, error } = useFiles();
+  const { data: files = [], isLoading, error, refetch } = useFiles();
   const uploadFileMutation = useUploadFile();
   const deleteFileMutation = useDeleteFile();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -43,6 +46,9 @@ export default function AdminPage() {
     negativeRatings: 0, // Placeholder: Update with actual data if available
     queries: 0, // Placeholder: Update with actual data if available
   }));
+
+  // Dummy Data (For Topics Table)
+  const topics: Topic[] = dummyTopics;
 
   // Handle file selection for upload
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,8 +96,23 @@ export default function AdminPage() {
   }
 
   if (error) {
-    return <div className="px-14">Error loading files: {error.message}</div>;
+  let errorMessage = "Error loading files: " + error.message;
+  
+  if ((error as AxiosError)?.response?.status === 401) {
+    errorMessage = "You must be logged in as an admin user to view the Admin Page.";
+  } else if ((error as AxiosError)?.response?.status === 403) {
+    errorMessage = "You must be an Admin User to view the Administration Page.";
   }
+
+  return (
+    <div className="px-14">
+      <p className="mb-4 text-red-600">{errorMessage}</p>
+      <Button variant="outline" onClick={() => refetch()}>
+        Try Again
+      </Button>
+    </div>
+  );
+}
 
   return (
     <div className="px-14 text-neutral-800">
@@ -120,6 +141,7 @@ export default function AdminPage() {
                   <TableRow key={doc.id}>
                     <TableCell>
                       <Checkbox
+                        className="border border-black"
                         checked={selectedFileIds.includes(doc.id)}
                         onCheckedChange={(checked) =>
                           handleCheckboxChange(doc.id, !!checked)
@@ -151,6 +173,9 @@ export default function AdminPage() {
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Upload Files</DialogTitle>
+                  <DialogDescription>
+                    Select a file to upload to the document management system.
+                  </DialogDescription>
                 </DialogHeader>
                 <label
                   htmlFor="file-upload"
@@ -207,19 +232,19 @@ export default function AdminPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {documents.map((doc) => (
-                  <TableRow key={doc.id}>
-                    <TableCell>{doc.name}</TableCell>
+                {topics.map((topic) => (
+                  <TableRow key={topic.id}>
+                    <TableCell>{topic.name}</TableCell>
                     <TableCell
                       className={`text-center ${
-                        (doc.positiveRatings / (doc.positiveRatings + doc.negativeRatings)) < 0.5
+                        (topic.positiveRatings / (topic.positiveRatings + topic.negativeRatings)) < 0.5
                           ? "text-red-600"
                           : "text-green-600"
                       }`}
                     >
-                      {(100 * doc.positiveRatings / (doc.positiveRatings + doc.negativeRatings) || 0).toFixed(2)}%
+                      {(100 * topic.positiveRatings / (topic.positiveRatings + topic.negativeRatings) || 0).toFixed(2)}%
                     </TableCell>
-                    <TableCell className="text-center">{doc.queries}</TableCell>
+                    <TableCell className="text-center">{topic.queries}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
