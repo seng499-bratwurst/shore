@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button/button';
 import {
   Table,
@@ -20,10 +21,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs/tabs";
-import { Document, useFiles } from '@/features/admin/api/upload';
+import { Input } from '@/components/ui/input/input';
+import { Document, useFiles } from '@/features/admin/api/file';
+import { useUploadFile } from '@/features/admin/api/upload';
 
 export default function AdminPage() {
   const { data: files = [], isLoading, error } = useFiles();
+  const uploadFileMutation = useUploadFile();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Transform API data to match Document type for the table
   const documents: Document[] = files.map(file => ({
@@ -33,6 +38,26 @@ export default function AdminPage() {
     negativeRatings: 0, // Placeholder: Update with actual data if available
     queries: 0, // Placeholder: Update with actual data if available
   }));
+
+  // Handle file selection
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    setSelectedFile(file);
+  };
+
+  // Handle file upload and close dialog
+  const handleUpload = () => {
+    if (selectedFile) {
+      uploadFileMutation.mutate(selectedFile, {
+        onSuccess: () => {
+          setSelectedFile(null); // Reset file input
+        },
+        onError: (error) => {
+          console.error('Upload error:', error.message);
+        },
+      });
+    }
+  };
 
   if (isLoading) {
     return <div className="px-14">Loading...</div>;
@@ -85,19 +110,41 @@ export default function AdminPage() {
           </div>
           <div className="flex justify-end mt-4 space-x-2 dark:text-neutral-50">
             <Dialog>
-              <DialogTrigger>Upload</DialogTrigger>
+              <DialogTrigger asChild>
+                <Button variant="outline">Upload</Button>
+              </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Upload Files</DialogTitle>
                 </DialogHeader>
-                <div className="border-2 border-dashed border-neutral-400 p-8 text-center mb-4 rounded">
-                  <p>Choose a file or drag and drop it here</p>
-                  <p className="text-sm text-neutral-500 mt-2">MD, TXT, and PDF formats, maximum size of 50MB</p>
-                </div>
+                <label
+                  htmlFor="file-upload"
+                  className="border-2 border-dashed border-neutral-400 p-8 text-center mb-4 rounded cursor-pointer hover:bg-neutral-100 transition-colors"
+                >
+                  <Input
+                    id="file-upload"
+                    type="file"
+                    accept=".md,.txt,.pdf"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  {selectedFile ? (
+                    <p className="text-sm text-neutral-800">{selectedFile.name}</p>
+                  ) : (
+                    <>
+                      <p>Choose a file or drag and drop it here</p>
+                      <p className="text-sm text-neutral-500 mt-2">MD, TXT, and PDF formats, maximum size of 50MB</p>
+                    </>
+                  )}
+                </label>
                 <DialogFooter>
                   <DialogClose asChild>
-                    <Button type="button" variant="secondary">
-                      Close
+                    <Button
+                      type="button"
+                      onClick={handleUpload}
+                      disabled={!selectedFile || uploadFileMutation.isPending}
+                    >
+                      {uploadFileMutation.isPending ? 'Uploading...' : 'Upload'}
                     </Button>
                   </DialogClose>
                 </DialogFooter>
