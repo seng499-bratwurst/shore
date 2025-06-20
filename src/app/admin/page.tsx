@@ -115,10 +115,10 @@ export default function AdminPage() {
 }
 
   return (
-    <div className="px-14 text-neutral-800">
+    <div className="px-14 ">
       <Tabs defaultValue="docs" className="w-full">
         <div className="flex justify-end pt-8">
-          <TabsList>
+          <TabsList  className='dark:bg-primary-900 bg-neutral-200'>
             <TabsTrigger value="docs">Documents</TabsTrigger>
             <TabsTrigger value="topics">Topics</TabsTrigger>
           </TabsList>
@@ -221,7 +221,7 @@ export default function AdminPage() {
           </div>
         </TabsContent>
         <TabsContent value="topics">
-          <div className="bg-neutral-50 shadow rounded p-6 overflow-y-auto max-h-[350px]">
+          <div className="shadow rounded p-6 overflow-y-auto max-h-[350px]">
             <h2 className="text-xl font-semibold mb-2">Topics</h2>
             <Table>
               <TableHeader>
