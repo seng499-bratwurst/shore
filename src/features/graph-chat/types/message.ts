@@ -1,0 +1,15 @@
+type Message = {
+  id: number;
+  conversationId?: number;
+  promptMessageId?: number;
+  content?: string;
+  oncApiQuery?: string;
+  oncApiResponse?: string;
+  isHelpful?: boolean;
+  role: string;
+  xCoordinate: number;
+  yCoordinate: number;
+  createdAt: Date;
+};
+
+export type { Message };

@@ -4,7 +4,7 @@ import { FiPlus } from 'react-icons/fi';
 import { useGraphContext } from '../contexts/graph-provider';
 
 const NodeEdgeControls: React.FC<NodeProps<Node>> = ({ id }) => {
-  const { onAddNode } = useGraphContext();
+  const { onBranchResponse: onAddNode } = useGraphContext();
   return (
     <>
       <div

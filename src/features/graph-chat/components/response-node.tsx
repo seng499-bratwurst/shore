@@ -5,7 +5,7 @@ import type { Node, NodeProps } from '@xyflow/react';
 import React, { useState } from 'react';
 import { FiDownload, FiThumbsDown, FiThumbsUp } from 'react-icons/fi';
 
-type ResponseNodeType = Node<{ sources: { name: string; url: string }[] }>;
+type ResponseNodeType = Node<{ content: string }>;
 
 // Dummy temperature data until we get LLM integrated
 const tempData = [
@@ -28,9 +28,10 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
         Response
       </div>
       <div className="flex flex-col px-sm space-y-xs mt-xs">
-        <div className="text-sm">Here is the temperature data from March 8th 2024:</div>
+        {data.content}
+        {/* <div className="text-sm">Here is the temperature data from March 8th 2024:</div>
         {/* Temporary table placeholder until we determine how we will actually display visual results */}
-        <table className="text-sm w-full border-collapse">
+        {/* <table className="text-sm w-full border-collapse">
           <thead>
             <tr>
               <th className="border border-neutral-200 dark:border-neutral-700 px-2xs py-2xs">
@@ -53,8 +54,8 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
               </tr>
             ))}
           </tbody>
-        </table>
-        <div className="text-2xs text-card-foreground">
+        </table> */}
+        {/* <div className="text-2xs text-card-foreground">
           Source{data.sources.length > 1 ? 's' : ''}:{' '}
           {data.sources.map((source, index) => (
             <span key={index}>
@@ -64,7 +65,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
               {index < data.sources.length - 1 ? ', ' : ''}
             </span>
           ))}
-        </div>
+        </div> */}
         <div className="flex justify-between items-center mb-xs">
           <div className="flex">
             <Button
