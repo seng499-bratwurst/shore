@@ -2,7 +2,7 @@ import { api } from '@/lib/axios';
 import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Edge } from '../types/edge';
-import { HandleSide } from '../types/handle';
+import { HandleId } from '../types/handle';
 import { Message } from '../types/message';
 
 type CreatePromptRequest = {
@@ -12,12 +12,12 @@ type CreatePromptRequest = {
   yCoordinate: number;
   responseXCoordinate: number;
   responseYCoordinate: number;
-  promptHandle: HandleSide;
-  responseHandle: HandleSide;
+  sourceHandle: HandleId;
+  targetHandle: HandleId;
   sources: {
     sourceMessageId: number;
-    sourceHandle: HandleSide;
-    targetHandle: HandleSide;
+    sourceHandle: HandleId;
+    targetHandle: HandleId;
   }[];
 };
 

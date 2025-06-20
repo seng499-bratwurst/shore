@@ -1,15 +1,5 @@
 import { Handle, Position } from '@xyflow/react';
 
-export type HandleId =
-  | 't-left'
-  | 's-left'
-  | 't-right'
-  | 's-right'
-  | 't-top'
-  | 's-top'
-  | 't-bottom'
-  | 's-bottom';
-
 const NodeHandles: React.FC = () => {
   return (
     <>

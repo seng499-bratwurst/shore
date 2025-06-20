@@ -9,7 +9,7 @@ import {
   OnSendPrompt,
 } from '@/features/graph-chat/contexts/graph-provider';
 import { useQueryClient } from '@tanstack/react-query';
-import type { Edge, Node, NodePositionChange } from '@xyflow/react';
+import type { Edge as _Edge, Node, NodePositionChange } from '@xyflow/react';
 import {
   addEdge,
   applyNodeChanges,
@@ -21,12 +21,12 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { throttle } from 'lodash';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCreatePrompt } from '../api/create-prompt';
 import { useGetConversationEdges } from '../api/get-conversation-edges';
 import { useGetConversationMessages } from '../api/get-conversation-messages';
 import { useUpdateMessage } from '../api/update-message';
-import { HandleSide } from '../types/handle';
+import { HandleId, HandleSide } from '../types/handle';
 import { Message } from '../types/message';
 import GraphControls from './graph-controls';
 
@@ -36,51 +36,36 @@ type GraphChatProps = {
   conversationId?: number | undefined;
 };
 
+type ReactFlowEdge = Omit<_Edge, 'sourceHandle' | 'targetHandle'> & {
+  sourceHandle: HandleId;
+  targetHandle: HandleId;
+};
+
 const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }) => {
   const [conversationId, setConversationId] = useState(_conversationId);
 
   const queryClient = useQueryClient();
   const pendingUpdatesRef = useRef<Record<string, NodePositionChange>>({});
 
-  const { data: messageEdges } = useGetConversationEdges(conversationId || 0, {
-    enabled: !!conversationId,
-  });
-  const _edges: Edge[] = useMemo(() => {
-    return [...(messageEdges || [])]?.map((edge) => ({
-      id: edge.id.toString(),
-      source: edge.sourceMessageId.toString(),
-      target: edge.targetMessageId.toString(),
-      sourceHandle: edge.sourceHandle,
-      targetHandle: edge.targetHandle,
-    }));
-  }, [messageEdges]);
+  const { data: messageEdges, isFetched: edgesAreFetched } = useGetConversationEdges(
+    conversationId || 0,
+    {
+      enabled: !!conversationId,
+    }
+  );
 
-  const { data: messages } = useGetConversationMessages(conversationId || 0, {
-    enabled: !!conversationId,
-  });
+  const { data: messages, isFetched: messagesAreFetched } = useGetConversationMessages(
+    conversationId || 0,
+    {
+      enabled: !!conversationId,
+    }
+  );
 
-  const _nodes: Node[] = useMemo(() => {
-    return [...(messages || [])]?.map((message) => ({
-      type: message.role === 'assistant' ? 'response' : 'prompt',
-      position: { x: message.xCoordinate, y: message.yCoordinate },
-      data: {
-        content: message.content,
-        oncApiQuery: message.oncApiQuery,
-        oncApiResponse: message.oncApiResponse,
-      },
-      id: message.id.toString(),
-      draggable: true,
-      deleteable: false,
-    }));
+  const persistentMessageIds = useMemo(() => {
+    return new Set(messages?.map((msg) => msg.id.toString()) || []);
   }, [messages]);
 
   const updateMessage = useUpdateMessage(conversationId || 0);
-
-  // Ref to always have latest nodes state in debounced function
-  // const nodesRef = useRef<Node[]>(_nodes);
-  // useEffect(() => {
-  //   nodesRef.current = nodes;
-  // }, [_nodes]);
 
   const throttledFlush = useRef(
     throttle(
@@ -106,30 +91,59 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
     onSettled: (data) => setConversationId(data?.conversationId || 0),
   });
 
-  const [tempEdges, setTempEdges] = useState<Edge[]>([]);
-  const [tempNodes, setTempNodes] = useState<Node[]>([]);
+  const [edges, setEdges] = useState<ReactFlowEdge[]>([]);
+  const [nodes, setNodes] = useState<Node[]>([]);
 
-  const edges: Edge[] = useMemo(() => {
-    return [..._edges, ...tempEdges];
-  }, [_edges, tempEdges]);
+  const [tempPromptEdges, setTempPromptEdges] = useState<ReactFlowEdge[]>([]);
 
-  const nodes: Node[] = useMemo(() => {
-    return [..._nodes, ...tempNodes];
-  }, [_nodes, tempNodes]);
+  useEffect(() => {
+    if (messagesAreFetched && edgesAreFetched) {
+      console.log('Setting initial nodes and edges:', {
+        messages: messages?.length,
+        edges: messageEdges?.length,
+      });
+
+      const _nodes = (messages || []).map((message) => ({
+        type: message.role === 'assistant' ? 'response' : 'prompt',
+        position: { x: message.xCoordinate, y: message.yCoordinate },
+        data: {
+          content: message.content,
+          oncApiQuery: message.oncApiQuery,
+          oncApiResponse: message.oncApiResponse,
+        },
+        id: message.id.toString(),
+        draggable: true,
+        deleteable: false,
+      }));
+
+      const _edges: ReactFlowEdge[] = (messageEdges || []).map((edge) => ({
+        id: edge.id.toString(),
+        source: edge.sourceMessageId.toString(),
+        target: edge.targetMessageId.toString(),
+        sourceHandle: edge.sourceHandle,
+        targetHandle: edge.targetHandle,
+      }));
+
+      setNodes(_nodes);
+      setEdges(_edges);
+    }
+  }, [messagesAreFetched, edgesAreFetched]);
 
   const handleNodeUpdates = useCallback(
-    (nodes: NodePositionChange[]) => {
-      // console.log('Handling node updates:', {
-      //   nodes,
-      //   qk: ['conversation-messages', conversationId],
-      // });
+    (changes: NodePositionChange[]) => {
+      console.log('Handling node updates:', {
+        nodes,
+        changes,
+        qk: ['conversation-messages', conversationId],
+      });
+      setNodes((nds) => applyNodeChanges(changes, nds));
 
       // Optimistic update
       queryClient.setQueryData<Message[]>(
         ['conversation-messages', conversationId],
         (prevNodes) => {
           if (!prevNodes) return [];
-          const updateMap = Object.fromEntries(nodes.map((n) => [n.id, n.position]));
+          const updateMap = Object.fromEntries(changes.map((n) => [n.id, n.position]));
           return prevNodes.map((node) =>
             updateMap[node.id] ? { ...node, position: updateMap[node.id] } : node
           );
@@ -137,57 +151,58 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
       );
 
       // Queue changes for throttled send
-      nodes.forEach((node) => {
+      changes.forEach((node) => {
         pendingUpdatesRef.current[node.id] = node;
       });
 
       throttledFlush();
     },
-    [queryClient, throttledFlush, conversationId]
+    [queryClient, throttledFlush, conversationId, nodes]
   );
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
-      setTempNodes((nds) => applyNodeChanges(changes, nds));
+      setNodes((nds) => applyNodeChanges(changes, nds));
 
-      // Collect all position changes
-      const positionUpdates = changes
-        .filter((change) => change.type === 'position' && change.position)
+      const persistantMessageUpdates = changes
+        .filter((change) => change.type === 'position' && persistentMessageIds.has(change.id))
         .map((change) => change as NodePositionChange);
-      if (positionUpdates.length > 0) {
-        handleNodeUpdates(positionUpdates);
+
+      if (persistantMessageUpdates.length > 0) {
+        handleNodeUpdates(persistantMessageUpdates);
       }
     },
-    [setTempNodes, handleNodeUpdates]
+    [handleNodeUpdates, persistentMessageIds, setNodes]
   );
 
   const onConnect: OnConnect = useCallback(
-    (connection) => () => {
+    (connection) => {
       const sourceNode = nodes.find(
         (node) => node.id === connection.source && node.type === 'response'
       );
-      const destinationNode = tempNodes.find(
+      const destinationNode = nodes.find(
         (node) => node.id === connection.target && node.type === 'prompt'
       );
-      if (!sourceNode || !destinationNode) {
-        return;
+      if (sourceNode && destinationNode) {
+        setTempPromptEdges((eds) =>
+          addEdge<ReactFlowEdge>(
+            {
+              ...connection,
+              sourceHandle: connection.sourceHandle,
+              targetHandle: connection.targetHandle,
+            },
+            eds
+          )
+        );
       }
-      tempEdges.push({
-        id: `e${sourceNode.id}-${destinationNode.id}`,
-        source: sourceNode.id,
-        target: destinationNode.id,
-        sourceHandle: connection.sourceHandle as HandleSide,
-        targetHandle: connection.targetHandle as HandleSide,
-      });
-      setTempEdges((eds) => addEdge(connection, eds));
     },
-    [nodes, tempNodes, tempEdges, setTempEdges]
+    [nodes, edges, setTempPromptEdges]
   );
 
   // need to implement when responses show up
   const onAddNode: OnBranchResponse = useCallback(
     ({ id, position }) => {
-      const node = _nodes.find((n) => n.id === id);
+      const node = nodes.find((n) => n.id === id);
       if (!node) return;
       let sourceHandle: HandleSide = 'left';
       let targetHandle: HandleSide = 'left';
@@ -217,7 +232,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
 
       const tempNodeId = `${Date.now()}`;
 
-      setTempEdges((eds) =>
+      setTempPromptEdges((eds) =>
         eds.concat({
           id: `e${node.id}-${tempNodeId}`,
           source: node.id,
@@ -227,7 +242,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         })
       );
 
-      setTempNodes((nds) =>
+      setNodes((nds) =>
         nds.concat({
           id: tempNodeId,
           position: { x: promptXCoordinate, y: promptYCoordinate },
@@ -240,12 +255,12 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         })
       );
     },
-    [setTempEdges, tempEdges, setTempNodes, tempNodes, nodes]
+    [setTempPromptEdges, edges, setNodes, nodes, nodes]
   );
 
   const onSendPrompt: OnSendPrompt = useCallback(
     ({ id, position, content }) => {
-      const node = tempNodes.find((n) => n.id === id);
+      const node = nodes.find((n) => n.id === id);
       if (!node) return;
       let sourceHandle: HandleSide = 'left';
       let responseHandle: HandleSide = 'left';
@@ -279,32 +294,83 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
           content,
           xCoordinate: node.position.x,
           yCoordinate: node.position.y,
-          responseHandle: responseHandle,
+          targetHandle: `t-${responseHandle}`,
           responseXCoordinate,
           responseYCoordinate,
-          promptHandle: sourceHandle,
+          sourceHandle: `s-${sourceHandle}`,
           conversationId: conversationId || 0,
-          sources: tempEdges
+          sources: tempPromptEdges
             .filter((edge) => edge.target === node.id)
             .map((edge) => ({
               sourceMessageId: parseInt(edge.source),
-              sourceHandle: edge.sourceHandle as HandleSide,
-              targetHandle: edge.targetHandle as HandleSide,
+              sourceHandle: edge.sourceHandle as HandleId,
+              targetHandle: edge.targetHandle as HandleId,
             })),
         },
         {
-          onSettled: (data) => {
+          onSettled: (data, _, variables) => {
             console.log('Prompt created:', data);
             if (data) {
               setConversationId(data.conversationId);
-              setTempNodes((nds) => nds.filter((n) => n.id !== node.id));
-              setTempEdges((eds) => eds.filter((e) => e.target !== node.id));
+              setNodes((nds) => nds.filter((n) => n.id !== node.id));
+              setNodes((nds) =>
+                nds.concat([
+                  {
+                    id: data.responseMessageId.toString(),
+                    position: {
+                      x: variables.responseXCoordinate,
+                      y: variables.responseYCoordinate,
+                    },
+                    data: {
+                      content: data.response,
+                      oncApiQuery: '',
+                      oncApiResponse: '',
+                    },
+                    type: 'response',
+                    draggable: true,
+                  },
+                  {
+                    id: data.promptMessageId.toString(),
+                    position: {
+                      x: variables.xCoordinate,
+                      y: variables.yCoordinate,
+                    },
+                    data: {
+                      content: variables.content,
+                      isEditable: false,
+                      isLoading: false,
+                    },
+                    type: 'prompt',
+                    draggable: true,
+                  },
+                ])
+              );
+              setEdges((eds) =>
+                eds.concat([
+                  ...data.createdEdges.map((edge) => ({
+                    id: edge.id.toString(),
+                    source: edge.sourceMessageId.toString(),
+                    target: edge.targetMessageId.toString(),
+                    sourceHandle: edge.sourceHandle,
+                    targetHandle: edge.targetHandle,
+                  })),
+                  ...variables.sources.map((source) => ({
+                    id: `e${source.sourceMessageId}-${data.promptMessageId}`,
+                    source: source.sourceMessageId.toString(),
+                    target: data.promptMessageId.toString(),
+                    sourceHandle: source.sourceHandle,
+                    targetHandle: source.targetHandle,
+                  })),
+                ])
+              );
+              // Remove temporary prompt edges
+              setTempPromptEdges((eds) => eds.filter((e) => e.target !== node.id));
             }
           },
           onError: (error) => {
             console.error('Error creating prompt:', error);
             // Optionally, you can reset the loading state or show an error message
-            setTempNodes((nds) =>
+            setNodes((nds) =>
               nds.map((n) =>
                 n.id === node.id
                   ? {
@@ -322,7 +388,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
       );
 
       // Set the prompt node to loading state
-      setTempNodes((nds) =>
+      setNodes((nds) =>
         nds.map((n) =>
           n.id === node.id
             ? {
@@ -338,16 +404,24 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
       // setTempNodes((nds) => nds.filter((n) => n.id !== node.id));
       // setTempEdges((eds) => eds.filter((e) => e.target !== node.id));
     },
-    [tempNodes, createPrompt]
+    [nodes, createPrompt, edges, setNodes, setEdges, setTempPromptEdges, conversationId]
   );
-  // console.log({ conversationId, _nodes, edges, tempNodes, tempEdges });
+  console.log({ conversationId, nodes, edges, tempPromptEdges, tempPromptNodes: nodes });
+
+  const allNodes = useMemo(() => {
+    return nodes.concat(nodes);
+  }, [nodes, nodes]);
+
+  const allEdges = useMemo(() => {
+    return edges.concat(tempPromptEdges);
+  }, [edges, tempPromptEdges]);
 
   return (
     <div className="h-full w-full">
       <GraphProvider onBranchResponse={onAddNode} onSendPrompt={onSendPrompt}>
         <ReactFlow
-          nodes={nodes}
-          edges={edges}
+          nodes={allNodes}
+          edges={allEdges}
           onNodesChange={onNodesChange}
           // onEdgesChange={onEdgesChange}
           onConnect={onConnect}
@@ -361,7 +435,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
           <Button
             className="absolute top-4 left-4 z-10 flex justify-center items-center"
             onClick={() =>
-              setTempNodes((nds) =>
+              setNodes((nds) =>
                 nds.concat({
                   id: `${Date.now()}`,
                   position: { x: 100, y: 100 },
