@@ -6,6 +6,7 @@ import {
   type UseMutationResult,
 } from '@tanstack/react-query';
 import { Message } from '../types/message';
+import { createConversationMessagesQueryKey } from './get-conversation-messages';
 
 type UpdateMessage = {
   id: number;
@@ -13,10 +14,8 @@ type UpdateMessage = {
   yCoordinate: number;
 };
 
-const updateMessage = (update: UpdateMessage) => {
-  console.log('Updating message:', update);
-  return api.patch<UpdateMessage, UpdateMessage>(`messages/${update.id}`, update);
-};
+const updateMessage = (update: UpdateMessage) =>
+  api.patch<UpdateMessage, UpdateMessage>(`messages/${update.id}`, update);
 
 const useUpdateMessage = (
   conversationId: number,
@@ -25,15 +24,18 @@ const useUpdateMessage = (
   const queryClient = useQueryClient();
 
   const updateMessageCoordinatesInCache = (updated: UpdateMessage) => {
-    queryClient.setQueryData<Message[]>(['conversation-messages', conversationId], (messages) => {
-      if (!messages) return messages;
+    queryClient.setQueryData<Message[]>(
+      createConversationMessagesQueryKey(conversationId),
+      (messages) => {
+        if (!messages) return messages;
 
-      return messages.map((msg) =>
-        msg.id === updated.id
-          ? { ...msg, xCoordinate: updated.xCoordinate, yCoordinate: updated.yCoordinate }
-          : msg
-      );
-    });
+        return messages.map((msg) =>
+          msg.id === updated.id
+            ? { ...msg, xCoordinate: updated.xCoordinate, yCoordinate: updated.yCoordinate }
+            : msg
+        );
+      }
+    );
   };
   return useMutation<UpdateMessage, unknown, UpdateMessage, unknown>({
     mutationFn: (update: UpdateMessage) => updateMessage(update),

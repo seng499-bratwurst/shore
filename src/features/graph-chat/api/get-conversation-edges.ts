@@ -5,12 +5,17 @@ import { Edge } from '../types/edge';
 const getConversationEdges = (conversationId: number) =>
   api.get<string, Edge[]>(`conversations/${conversationId}/edges`);
 
+export const createConversationEdgesQueryKey = (conversationId: number | undefined) => [
+  'conversation-edges',
+  conversationId,
+];
+
 export const useGetConversationEdges = (
   conversationId: number,
   options: Omit<UseQueryOptions<Edge[], unknown>, 'queryKey' | 'queryFn'> = {}
 ): UseQueryResult<Edge[], unknown> => {
   return useQuery({
-    queryKey: ['conversation-edges', conversationId],
+    queryKey: createConversationEdgesQueryKey(conversationId),
     queryFn: () => getConversationEdges(conversationId),
     ...options,
   });

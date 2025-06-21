@@ -1,3 +1,4 @@
+import { Edge as _Edge } from '@xyflow/react'; // Assuming _Edge is imported from a library like xyflow
 import { HandleId } from './handle';
 
 type Edge = {
@@ -8,4 +9,9 @@ type Edge = {
   targetHandle: HandleId; // Default to "top" if not provided
 };
 
-export type { Edge };
+type ReactFlowEdge = Omit<_Edge, 'sourceHandle' | 'targetHandle'> & {
+  sourceHandle: HandleId;
+  targetHandle: HandleId;
+};
+
+export type { Edge, ReactFlowEdge };

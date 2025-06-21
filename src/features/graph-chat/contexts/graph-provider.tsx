@@ -1,15 +1,15 @@
-import { Position } from '@xyflow/react';
 import React, { createContext, ReactNode, useContext } from 'react';
+import { HandleSide } from '../types/handle';
 
 type OnAddNodeParams = {
   id: string;
-  position: Position;
+  handleSide: HandleSide;
 };
 
 type OnSendPromptParams = {
   content: string;
   id: string;
-  position: Position;
+  position: HandleSide;
 };
 
 export type OnBranchResponse = (params: OnAddNodeParams) => void;

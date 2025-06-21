@@ -5,12 +5,17 @@ import { Message } from '../types/message';
 const getConversationMessages = (conversationId: number) =>
   api.get<number, Message[]>(`conversations/${conversationId}/messages`);
 
+export const createConversationMessagesQueryKey = (conversationId: number | undefined) => [
+  'conversation-messages',
+  conversationId,
+];
+
 export const useGetConversationMessages = (
   conversationId: number,
   options: Omit<UseQueryOptions<Message[], unknown>, 'queryKey' | 'queryFn'> = {}
 ) => {
   return useQuery({
-    queryKey: ['conversation-messages', conversationId],
+    queryKey: createConversationMessagesQueryKey(conversationId),
     queryFn: () => getConversationMessages(conversationId),
     ...options,
   });
