@@ -115,6 +115,9 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
   useEffect(() => {
     console.log('hasLoadedInitialGraph:', hasLoadedInitialGraph);
     if (hasLoadedInitialGraph) {
+      console.log({ messages, messageEdges });
+      setNodes([]);
+      setEdges([]);
       setNodes((nds) =>
         applyNodeChanges(
           messages!.map((msg) => ({
@@ -388,43 +391,43 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
     [nodes, createPrompt, edges, setNodes, setEdges, conversationId]
   );
 
+  console.log({ nodes, edges });
+
   return (
-    <div className="h-full w-full">
-      <GraphProvider onBranchResponse={onBranchResponse} onSendPrompt={onSendPrompt}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onConnect={onConnect}
-          nodeTypes={nodeTypes}
-          nodesFocusable={false}
-          fitView
-          nodesDraggable
+    <GraphProvider onBranchResponse={onBranchResponse} onSendPrompt={onSendPrompt}>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onConnect={onConnect}
+        nodeTypes={nodeTypes}
+        nodesFocusable={false}
+        fitView
+        nodesDraggable
+      >
+        <Background />
+        <GraphControls />
+        <Button
+          className="absolute top-4 left-4 z-10 flex justify-center items-center"
+          onClick={() =>
+            setNodes((nds) =>
+              nds.concat({
+                id: `${Date.now()}`,
+                position: { x: 100, y: 100 },
+                data: {
+                  isEditable: true,
+                  isLoading: false,
+                },
+                type: 'prompt',
+                draggable: true,
+              })
+            )
+          }
         >
-          <Background />
-          <GraphControls />
-          <Button
-            className="absolute top-4 left-4 z-10 flex justify-center items-center"
-            onClick={() =>
-              setNodes((nds) =>
-                nds.concat({
-                  id: `${Date.now()}`,
-                  position: { x: 100, y: 100 },
-                  data: {
-                    isEditable: true,
-                    isLoading: false,
-                  },
-                  type: 'prompt',
-                  draggable: true,
-                })
-              )
-            }
-          >
-            New Prompt
-          </Button>
-        </ReactFlow>
-      </GraphProvider>
-    </div>
+          New Prompt
+        </Button>
+      </ReactFlow>
+    </GraphProvider>
   );
 };
 

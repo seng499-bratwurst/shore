@@ -29,12 +29,12 @@ export default function RootLayout({
   return (
     // suppressHydrationWarning is recommended by shadcn
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${firaCode.variable}`}>
+      <body className={`${inter.variable} ${firaCode.variable} overflow-hidden`}>
         <AppProvider>
           <header>
             <Header />
           </header>
-          {children}
+          <div className="w-full pt-16">{children}</div>
         </AppProvider>
       </body>
     </html>
