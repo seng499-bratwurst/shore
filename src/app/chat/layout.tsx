@@ -4,7 +4,7 @@ import { AppSidebar } from "@/components/ui/sidebar/app-sidebar"
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-<SidebarProvider>
+    <SidebarProvider>
       <div className="flex min-h-screen">
         <div className="hidden md:block ">
           <AppSidebar  />
