@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button/button';
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -18,11 +19,11 @@ export default function Home() {
         </p>
 
         {/* Blue Chat Button */}
-        <a href="/chat">
+        <Link href="/chat">
           <Button size="lg" className="font-bold">
             Start Chat Now
           </Button>
-        </a>
+        </Link>
 
         {/* Territorial Acknowledgement */}
         <p className="mt-8 italic pt-14">

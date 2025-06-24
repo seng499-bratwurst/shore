@@ -1,3 +1,4 @@
+import { listConversationsQueryKey } from '@/features/chat-history/api/list-conversations';
 import { api } from '@/lib/axios';
 import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -87,6 +88,7 @@ export const useCreatePrompt = (
     queryClient.setQueryData<Edge[]>(createConversationEdgesQueryKey(conversationId), (edges) => {
       return [...(edges || []), ...response.createdEdges];
     });
+    if (!conversationId) queryClient.invalidateQueries({ queryKey: listConversationsQueryKey });
   };
 
   return useMutation<CreatePromptResponse, unknown, CreatePromptRequest, unknown>({

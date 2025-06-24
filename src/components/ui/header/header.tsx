@@ -17,10 +17,9 @@ import {
 } from '../dialog/dialog';
 
 export default function Header() {
-  const { isLoggedIn, token } = useAuthStore();
-  console.log({ isLoggedIn, token });
+  const { isLoggedIn } = useAuthStore();
   return (
-    <nav className="flex items-center justify-between p-4 bg-primary-50 dark:bg-primary-900 w-full h-16 relative shadow-sm">
+    <nav className="fixed flex items-center justify-between p-4 bg-primary-50 dark:bg-primary-900 w-full h-16 shadow-sm z-50">
       <div className="flex items-center">
         <Image
           src={'/onc_logo.png'}
