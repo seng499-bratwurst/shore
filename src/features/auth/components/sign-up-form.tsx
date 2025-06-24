@@ -12,6 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import React from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SignUpData, signUpSchema, useSignUp } from '../api/sign-up';
+import { useState } from 'react';
 
 export type SignUpFormProps = {
   onCancel?: () => void;
@@ -20,6 +21,8 @@ export type SignUpFormProps = {
 };
 
 const SignUpForm: React.FC<SignUpFormProps> = ({ onCancel, onLogin, onSuccess }) => {
+  const [message, setMessage] = useState<string | null>(null);
+  const [isError, setIsError] = useState(false);
   const form = useForm<SignUpData>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -33,12 +36,33 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onCancel, onLogin, onSuccess })
   const signUp = useSignUp();
 
   const onSubmit: SubmitHandler<SignUpData> = (data) => {
-    signUp.mutate(data, { onSuccess });
+    signUp.mutate(data, {
+      onSuccess: () => {
+        setMessage('Account created successfully!');
+        setIsError(false);
+        if (onSuccess) onSuccess();
+      },
+      onError: (error: any) => {
+        setIsError(true);
+        setMessage(error?.message || 'Sign up failed. Please try again.');
+      },
+    });
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {message && (
+        <div
+            className={`text-center text-sm ${
+            isError
+                ? 'text-red-600 dark:text-red-400'
+                : 'text-green-600 dark:text-green-400'
+            }`}
+        >
+            {message}
+        </div>
+        )}
         <FormField
           control={form.control}
           name="name"
