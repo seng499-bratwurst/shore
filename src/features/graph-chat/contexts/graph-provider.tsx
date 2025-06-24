@@ -1,25 +1,43 @@
-import { Position } from '@xyflow/react';
 import React, { createContext, ReactNode, useContext } from 'react';
+import { HandleSide } from '../types/handle';
 
 type OnAddNodeParams = {
   id: string;
-  position: Position;
+  handleSide: HandleSide;
 };
-export type OnAddNode = (params: OnAddNodeParams) => void;
+
+type OnSendPromptParams = {
+  content: string;
+  id: string;
+  position: HandleSide;
+};
+
+export type OnBranchResponse = (params: OnAddNodeParams) => void;
+export type OnSendPrompt = (params: OnSendPromptParams) => void;
 
 type GraphContextType = {
-  onAddNode: OnAddNode;
+  onBranchResponse: OnBranchResponse;
+  onSendPrompt: OnSendPrompt; // Optional, can be used for sending prompts
 };
 
 const GraphContext = createContext<GraphContextType | undefined>(undefined);
 
 type GraphProviderProps = {
   children: ReactNode;
-  onAddNode: OnAddNode;
+  onBranchResponse: OnBranchResponse;
+  onSendPrompt: OnSendPrompt;
 };
 
-export const GraphProvider: React.FC<GraphProviderProps> = ({ children, onAddNode }) => {
-  return <GraphContext.Provider value={{ onAddNode }}>{children}</GraphContext.Provider>;
+export const GraphProvider: React.FC<GraphProviderProps> = ({
+  children,
+  onBranchResponse,
+  onSendPrompt,
+}) => {
+  return (
+    <GraphContext.Provider value={{ onBranchResponse, onSendPrompt }}>
+      {children}
+    </GraphContext.Provider>
+  );
 };
 
 export const useGraphContext = (): GraphContextType => {

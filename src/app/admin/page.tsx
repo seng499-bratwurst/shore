@@ -1,15 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/button/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table/table';
+import { Checkbox } from '@/components/ui/checkbox/checkbox';
 import {
   Dialog,
   DialogClose,
@@ -19,16 +11,24 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog/dialog";
-import { Checkbox } from '@/components/ui/checkbox/checkbox';
+} from '@/components/ui/dialog/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table/table';
+import { useState } from 'react';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs/tabs";
 import { Input } from '@/components/ui/input/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs/tabs';
+import { useDeleteFile } from '@/features/admin/api/deleteFile';
 import { Document, useFiles } from '@/features/admin/api/file';
 import { useUploadFile } from '@/features/admin/api/upload';
-import { useDeleteFile } from '@/features/admin/api/deleteFile';
 import { dummyTopics, Topic } from '@/features/admin/data/topicsDummyData';
-import { AxiosError } from "axios";
+import { AxiosError } from 'axios';
 
 export default function AdminPage() {
   const { data: files = [], isLoading, error, refetch } = useFiles();
@@ -38,7 +38,7 @@ export default function AdminPage() {
   const [selectedFileIds, setSelectedFileIds] = useState<number[]>([]);
 
   // Transform API data to match Document type for the table
-  const documents: Document[] = files.map(file => ({
+  const documents: Document[] = files.map((file) => ({
     id: file.id,
     name: file.fileName,
     uploadDate: new Date(file.createdAt).toLocaleDateString(),
@@ -72,17 +72,17 @@ export default function AdminPage() {
 
   // Handle checkbox toggle for file selection
   const handleCheckboxChange = (fileId: number, checked: boolean) => {
-    setSelectedFileIds(prev =>
-      checked ? [...prev, fileId] : prev.filter(id => id !== fileId)
+    setSelectedFileIds((prev) =>
+      checked ? [...prev, fileId] : prev.filter((id) => id !== fileId)
     );
   };
 
   // Handle delete button click
   const handleDelete = () => {
-    selectedFileIds.forEach(fileId => {
+    selectedFileIds.forEach((fileId) => {
       deleteFileMutation.mutate(fileId, {
         onSuccess: () => {
-          setSelectedFileIds(prev => prev.filter(id => id !== fileId));
+          setSelectedFileIds((prev) => prev.filter((id) => id !== fileId));
         },
         onError: (error) => {
           console.error('Delete error:', error.message);
@@ -96,29 +96,29 @@ export default function AdminPage() {
   }
 
   if (error) {
-  let errorMessage = "Error loading files: " + error.message;
-  
-  if ((error as AxiosError)?.response?.status === 401) {
-    errorMessage = "You must be logged in as an admin user to view the Admin Page.";
-  } else if ((error as AxiosError)?.response?.status === 403) {
-    errorMessage = "You must be an Admin User to view the Administration Page.";
-  }
+    let errorMessage = 'Error loading files: ' + error.message;
 
-  return (
-    <div className="px-14">
-      <p className="mb-4 text-red-600">{errorMessage}</p>
-      <Button variant="outline" onClick={() => refetch()}>
-        Try Again
-      </Button>
-    </div>
-  );
-}
+    if ((error as AxiosError)?.response?.status === 401) {
+      errorMessage = 'You must be logged in as an admin user to view the Admin Page.';
+    } else if ((error as AxiosError)?.response?.status === 403) {
+      errorMessage = 'You must be an Admin User to view the Administration Page.';
+    }
+
+    return (
+      <div className="px-14">
+        <p className="mb-4 text-red-600">{errorMessage}</p>
+        <Button variant="outline" onClick={() => refetch()}>
+          Try Again
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="px-14 ">
       <Tabs defaultValue="docs" className="w-full">
         <div className="flex justify-end pt-8">
-          <TabsList  className='dark:bg-primary-900 bg-neutral-200'>
+          <TabsList className="dark:bg-primary-900 bg-neutral-200">
             <TabsTrigger value="docs">Documents</TabsTrigger>
             <TabsTrigger value="topics">Topics</TabsTrigger>
           </TabsList>
@@ -143,20 +143,22 @@ export default function AdminPage() {
                       <Checkbox
                         className="border border-black"
                         checked={selectedFileIds.includes(doc.id)}
-                        onCheckedChange={(checked) =>
-                          handleCheckboxChange(doc.id, !!checked)
-                        }
+                        onCheckedChange={(checked) => handleCheckboxChange(doc.id, !!checked)}
                       />
                     </TableCell>
                     <TableCell>{doc.name}</TableCell>
                     <TableCell
                       className={`text-center ${
-                        (doc.positiveRatings / (doc.positiveRatings + doc.negativeRatings)) < 0.5
-                          ? "text-red-600"
-                          : "text-green-600"
+                        doc.positiveRatings / (doc.positiveRatings + doc.negativeRatings) < 0.5
+                          ? 'text-red-600'
+                          : 'text-green-600'
                       }`}
                     >
-                      {(100 * doc.positiveRatings / (doc.positiveRatings + doc.negativeRatings) || 0).toFixed(2)}%
+                      {(
+                        (100 * doc.positiveRatings) / (doc.positiveRatings + doc.negativeRatings) ||
+                        0
+                      ).toFixed(2)}
+                      %
                     </TableCell>
                     <TableCell className="text-center">{doc.queries}</TableCell>
                     <TableCell className="text-center">{doc.uploadDate}</TableCell>
@@ -193,7 +195,9 @@ export default function AdminPage() {
                   ) : (
                     <>
                       <p>Choose a file or drag and drop it here</p>
-                      <p className="text-sm text-neutral-500 mt-2">MD, TXT, and PDF formats, maximum size of 50MB</p>
+                      <p className="text-sm text-neutral-500 mt-2">
+                        MD, TXT, and PDF formats, maximum size of 50MB
+                      </p>
                     </>
                   )}
                 </label>
@@ -214,7 +218,7 @@ export default function AdminPage() {
               variant="outline"
               disabled={selectedFileIds.length === 0 || deleteFileMutation.isPending}
               onClick={handleDelete}
-              className='px-4'
+              className="px-4"
             >
               {deleteFileMutation.isPending ? 'Deleting...' : 'Delete'}
             </Button>
@@ -237,12 +241,17 @@ export default function AdminPage() {
                     <TableCell>{topic.name}</TableCell>
                     <TableCell
                       className={`text-center ${
-                        (topic.positiveRatings / (topic.positiveRatings + topic.negativeRatings)) < 0.5
-                          ? "text-red-600"
-                          : "text-green-600"
+                        topic.positiveRatings / (topic.positiveRatings + topic.negativeRatings) <
+                        0.5
+                          ? 'text-red-600'
+                          : 'text-green-600'
                       }`}
                     >
-                      {(100 * topic.positiveRatings / (topic.positiveRatings + topic.negativeRatings) || 0).toFixed(2)}%
+                      {(
+                        (100 * topic.positiveRatings) /
+                          (topic.positiveRatings + topic.negativeRatings) || 0
+                      ).toFixed(2)}
+                      %
                     </TableCell>
                     <TableCell className="text-center">{topic.queries}</TableCell>
                   </TableRow>

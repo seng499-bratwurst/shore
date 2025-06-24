@@ -5,7 +5,7 @@ import type { Node, NodeProps } from '@xyflow/react';
 import React, { useState } from 'react';
 import { FiDownload, FiThumbsDown, FiThumbsUp } from 'react-icons/fi';
 
-type ResponseNodeType = Node<{ sources: { name: string; url: string }[] }>;
+type ResponseNodeType = Node<{ content: string }>;
 
 // Dummy temperature data until we get LLM integrated
 const tempData = [
@@ -24,47 +24,11 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
     <div className="relative bg-card text-card-foreground rounded-b-lg shadow-md flex flex-col min-w-[100px] max-w-[300px]">
       <NodeHandles />
       <NodeEdgeControls {...props} />
-      <div className="bg-secondary text-secondary-foreground w-full text-sm px-sm py-2xs">
+      <div className="bg-secondary text-secondary-foreground w-full text-sm px-sm py-xs">
         Response
       </div>
       <div className="flex flex-col px-sm space-y-xs mt-xs">
-        <div className="text-sm">Here is the temperature data from March 8th 2024:</div>
-        {/* Temporary table placeholder until we determine how we will actually display visual results */}
-        <table className="text-sm w-full border-collapse">
-          <thead>
-            <tr>
-              <th className="border border-neutral-200 dark:border-neutral-700 px-2xs py-2xs">
-                Time
-              </th>
-              <th className="border border-neutral-200 dark:border-neutral-700 px-2xs py-2xs">
-                Temp (°C)
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {tempData.map(([time, temp], idx) => (
-              <tr key={idx}>
-                <td className="border border-neutral-200 dark:border-neutral-700 px-2xs py-2xs">
-                  {time}
-                </td>
-                <td className="border border-neutral-200 dark:border-neutral-700 px-2xs py-2xs">
-                  {temp}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="text-2xs text-card-foreground">
-          Source{data.sources.length > 1 ? 's' : ''}:{' '}
-          {data.sources.map((source, index) => (
-            <span key={index}>
-              <a href={source.url} target="_blank" rel="noopener noreferrer" className="underline">
-                {source.name}
-              </a>
-              {index < data.sources.length - 1 ? ', ' : ''}
-            </span>
-          ))}
-        </div>
+        {data.content}
         <div className="flex justify-between items-center mb-xs">
           <div className="flex">
             <Button

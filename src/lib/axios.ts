@@ -13,7 +13,7 @@ const api = axios.create({
 
 // Middleware to return only the response body
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => response.data.data || response.data, // Return the data field or the entire response if data is not present
   (error) => Promise.reject(error)
 );
 
