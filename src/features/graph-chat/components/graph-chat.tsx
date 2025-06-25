@@ -31,7 +31,7 @@ import {
 import { useUpdateMessage } from '../api/update-message';
 import { ReactFlowEdge } from '../types/edge';
 import { Message } from '../types/message';
-import { createEdgeId, messageEdgeToReactFlowEdge } from '../util/edge';
+import { createEdgeId, messageEdgeToReactFlowEdge, targetArrow } from '../util/edge';
 import { createSourceHandleId, createTargetHandleId, oppositeHandleSide } from '../util/handle';
 import {
   branchedNodeCoordinates,
@@ -200,6 +200,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
               target: connection.target,
               sourceHandle: connection.sourceHandle,
               targetHandle: connection.targetHandle,
+              markerEnd: targetArrow,
               id: createEdgeId(connection.source, connection.target),
             } as ReactFlowEdge,
             eds
@@ -249,6 +250,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
             target: tempNodeId,
             sourceHandle: createSourceHandleId(handleSide),
             targetHandle: createTargetHandleId(oppositeSide),
+            markerEnd: targetArrow,
           },
           eds
         )
