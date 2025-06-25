@@ -4,6 +4,7 @@ import { NodeHandles } from '@/features/graph-chat/components/node-handles';
 import type { Node, NodeProps } from '@xyflow/react';
 import React, { useState } from 'react';
 import { FiDownload, FiThumbsDown, FiThumbsUp } from 'react-icons/fi';
+import ReactMarkdown from 'react-markdown';
 
 type ResponseNodeType = Node<{ content: string }>;
 
@@ -28,7 +29,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
         Response
       </div>
       <div className="flex flex-col px-sm space-y-xs mt-xs">
-        {data.content}
+        <ReactMarkdown>{data.content}</ReactMarkdown>
         <div className="flex justify-between items-center mb-xs">
           <div className="flex">
             <Button
