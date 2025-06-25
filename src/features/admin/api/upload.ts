@@ -19,11 +19,10 @@ const uploadFile = async (file: File): Promise<number> => {
       'Content-Type': 'multipart/form-data',
     },
   });
-  const parsed = uploadFileSchema.parse(response);
-  if (!parsed.success) {
-    throw new Error(parsed.error || 'Failed to upload file');
-  }
-  return parsed.data;
+  console.log('Upload response:', response);
+
+  const parsed = z.number().parse(response);
+  return parsed;
 };
 
 // Hook to upload a file

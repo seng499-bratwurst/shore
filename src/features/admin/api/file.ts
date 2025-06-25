@@ -10,6 +10,7 @@ const fileItemSchema = z.object({
   uploadedBy: z.string(),
 });
 
+
 // Define the API response schema
 export const fileSchema = z.object({
   success: z.boolean(),
@@ -33,12 +34,10 @@ export type Document = {
 // API call function
 const fetchFiles = async (): Promise<File[]> => {
   const response = await api.get('files');
-  console.log('API Response:', response); // Keep for debugging
-  const parsed = fileSchema.parse(response);
-  if (!parsed.success) {
-    throw new Error(parsed.error || 'Failed to fetch files');
-  }
-  return parsed.data;
+  console.log('API Response:', response);
+  
+  const parsed = z.array(fileItemSchema).parse(response);
+  return parsed;
 };
 
 // Hook to fetch files
