@@ -3,25 +3,30 @@ import { HandleSide } from '../types/handle';
 import { Message } from '../types/message';
 
 const branchedNodeCoordinates = (response: Node, side: HandleSide): XYPosition => {
+  console.log(`dimensions of response node: ${response.width}x${response.height}`);
+
   if (side === 'left') {
     return {
-      x: response.position.x - 300,
-      y: response.position.y,
+      x: response.position.x - 400,
+      y: response.position.y - 75,
     };
   } else if (side === 'right') {
     return {
-      x: response.position.x + 300,
-      y: response.position.y,
+      x: response.position.x + (response.width || 0) + 400,
+      y: response.position.y - 75,
     };
   } else if (side === 'top') {
     return {
       x: response.position.x,
-      y: response.position.y - 200,
+      y: response.position.y - 350,
     };
   } else if (side === 'bottom') {
+    let extra = 0;
+    console.log(`response content length: ${(response.data.content as string)?.length}`);
+    extra = (response.data.content as string)?.length / 1.1 || 0;
     return {
       x: response.position.x,
-      y: response.position.y + 400,
+      y: response.position.y + extra + 250,
     };
   }
   return { x: response.position.x, y: response.position.y };

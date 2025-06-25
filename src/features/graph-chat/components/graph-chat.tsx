@@ -18,6 +18,7 @@ import {
   OnConnect,
   OnNodesChange,
   ReactFlow,
+  useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { throttle } from 'lodash';
@@ -33,12 +34,7 @@ import { ReactFlowEdge } from '../types/edge';
 import { Message } from '../types/message';
 import { createEdgeId, messageEdgeToReactFlowEdge, targetArrow } from '../util/edge';
 import { createSourceHandleId, createTargetHandleId, oppositeHandleSide } from '../util/handle';
-import {
-  branchedNodeCoordinates,
-  determinePromptBranchSide,
-  generateTempNodeId,
-  messageToNode,
-} from '../util/node';
+import { branchedNodeCoordinates, generateTempNodeId, messageToNode } from '../util/node';
 import GraphControls from './graph-controls';
 
 const POSITION_UPDATE_INTERVAL = 2500; // Interval to send message position updates
@@ -211,9 +207,11 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
     [nodes, edges, setEdges]
   );
 
+  const { getNode } = useReactFlow();
+
   const onBranchResponse: OnBranchResponse = useCallback(
     ({ id, handleSide }) => {
-      const node = nodes.find((n) => n.id === id);
+      const node = getNode(id); // Get the node being branched from
       if (!node) return;
 
       const oppositeSide = oppositeHandleSide(handleSide);
@@ -260,11 +258,11 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
   );
 
   const onSendPrompt: OnSendPrompt = useCallback(
-    ({ id, content }) => {
+    ({ id, content, position }) => {
       const node = nodes.find((n) => n.id === id); // Find temporary node of the prompt being sent
       if (!node) return;
 
-      const branchSide = determinePromptBranchSide(node.position);
+      const branchSide = position;
       const responseCoordinates = branchedNodeCoordinates(node, branchSide);
 
       createPrompt.mutate(
@@ -272,10 +270,10 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
           content,
           xCoordinate: node.position.x,
           yCoordinate: node.position.y,
-          targetHandle: createTargetHandleId(branchSide),
+          targetHandle: createTargetHandleId(oppositeHandleSide(branchSide)),
           responseXCoordinate: responseCoordinates.x,
           responseYCoordinate: responseCoordinates.y,
-          sourceHandle: createSourceHandleId(oppositeHandleSide(branchSide)),
+          sourceHandle: createSourceHandleId(branchSide),
           conversationId,
           sources: edges
             .filter((edge) => edge.target === node.id)
@@ -415,7 +413,10 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
             setNodes((nds) =>
               nds.concat({
                 id: `${Date.now()}`,
-                position: { x: 100, y: 100 },
+                position: {
+                  x: Math.floor(Math.random() * 301) - 150,
+                  y: Math.floor(Math.random() * 301) - 150,
+                },
                 data: {
                   isEditable: true,
                   isLoading: false,

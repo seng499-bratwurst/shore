@@ -8,7 +8,7 @@ export default function GraphControls() {
   const sidebar = useSidebar();
 
   return (
-    <div className="absolute left-2.5 top-1/2 z-10 -translate-y-1/2 grid grid-cols-1 gap-2 items-center">
+    <div className="absolute left-2.5 top-1/2 z-10 -translate-y-1/2 grid grid-cols-1 gap-2 items-center mt-[-32px]">
       <Button onClick={() => zoomIn()} aria-label="Zoom in" variant="ghost" size="icon">
         <FiPlusCircle size={20} />
       </Button>
