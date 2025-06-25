@@ -23,8 +23,8 @@ const ResponseBranchControls: React.FC<{
   return (
     <>
       <div
-        className="absolute left-0 right-0 bottom-1/2 top-[-80px] cursor-pointer transition-opacity opacity-0 hover:opacity-100 flex flex-col items-center justify-start p-sm"
-        onClick={() => onBranchResponse('top')}
+        className="absolute top-0 bottom-0 left-[-80px] w-[190px] cursor-pointer transition-opacity opacity-0 hover:opacity-100 flex items-center justify-start p-sm"
+        onClick={() => onBranchResponse('left')}
       >
         <Button
           variant="secondary"
@@ -36,8 +36,8 @@ const ResponseBranchControls: React.FC<{
         </Button>
       </div>
       <div
-        className="absolute left-0 right-0 bottom-[-80px] top-1/2 cursor-pointer transition-opacity opacity-0 hover:opacity-100 flex flex-col items-center justify-end p-sm"
-        onClick={() => onBranchResponse('bottom')}
+        className="absolute top-0 bottom-0 right-[-80px] w-[190px]  cursor-pointer transition-opacity opacity-0 hover:opacity-100 flex items-center justify-end p-sm"
+        onClick={() => onBranchResponse('right')}
       >
         <Button
           variant="secondary"

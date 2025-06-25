@@ -8,12 +8,12 @@ const branchedNodeCoordinates = (response: Node, side: HandleSide): XYPosition =
   if (side === 'left') {
     return {
       x: response.position.x - 400,
-      y: response.position.y - 75,
+      y: response.position.y + 75,
     };
   } else if (side === 'right') {
     return {
       x: response.position.x + (response.width || 0) + 400,
-      y: response.position.y - 75,
+      y: response.position.y + 75,
     };
   } else if (side === 'top') {
     return {
