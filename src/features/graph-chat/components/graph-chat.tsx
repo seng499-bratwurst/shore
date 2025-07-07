@@ -30,9 +30,11 @@ import {
   useGetConversationMessages,
 } from '../api/get-conversation-messages';
 import { useUpdateMessage } from '../api/update-message';
+import { useGraphChatSettingsStore } from '../stores/graph-chat-settings-store';
 import { ReactFlowEdge } from '../types/edge';
+import { HandleId } from '../types/handle';
 import { Message } from '../types/message';
-import { createEdgeId, messageEdgeToReactFlowEdge, targetArrow } from '../util/edge';
+import { createTemporaryEdge, messageEdgeToReactFlowEdge } from '../util/edge';
 import { createSourceHandleId, createTargetHandleId, oppositeHandleSide } from '../util/handle';
 import { branchedNodeCoordinates, generateTempNodeId, messageToNode } from '../util/node';
 import GraphControls from './graph-controls';
@@ -46,6 +48,7 @@ type GraphChatProps = {
 };
 
 const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }) => {
+  const { settings } = useGraphChatSettingsStore();
   const [conversationId, setConversationId] = useState(_conversationId);
   const [edges, setEdges] = useState<ReactFlowEdge[]>([]);
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -135,6 +138,18 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
     }
   }, [hasLoadedInitialGraph]);
 
+  // Update all edges when edge type setting changes
+  useEffect(() => {
+    if (edges.length > 0) {
+      setEdges((currentEdges) =>
+        currentEdges.map((edge) => ({
+          ...edge,
+          type: settings.edgeType === 'default' ? undefined : settings.edgeType,
+        }))
+      );
+    }
+  }, [settings.edgeType]);
+
   const handleNodeUpdates = useCallback(
     (changes: NodePositionChange[]) => {
       setNodes((nds) => applyNodeChanges(changes, nds));
@@ -178,6 +193,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
 
   const onConnect: OnConnect = useCallback(
     (connection) => {
+      console.log('onConnect:', connection);
       const sourceNode = nodes.find(
         (node) => node.id === connection.source && node.type === 'response'
       );
@@ -191,14 +207,12 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         // If the connection is valid, add the edge
         setEdges((eds) =>
           addEdge(
-            {
-              source: connection.source,
-              target: connection.target,
-              sourceHandle: connection.sourceHandle,
-              targetHandle: connection.targetHandle,
-              markerEnd: targetArrow,
-              id: createEdgeId(connection.source, connection.target),
-            } as ReactFlowEdge,
+            createTemporaryEdge(
+              connection.source,
+              connection.target,
+              connection.sourceHandle! as HandleId,
+              connection.targetHandle! as HandleId
+            ),
             eds
           )
         );
@@ -242,14 +256,12 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
       // Create temporary edge to prompt node (will be replaced with actual response-prompt edge on creation)
       setEdges((eds) =>
         addEdge(
-          {
-            id: createEdgeId(node.id, tempNodeId),
-            source: node.id,
-            target: tempNodeId,
-            sourceHandle: createSourceHandleId(handleSide),
-            targetHandle: createTargetHandleId(oppositeSide),
-            markerEnd: targetArrow,
-          },
+          createTemporaryEdge(
+            node.id,
+            tempNodeId,
+            createSourceHandleId(handleSide),
+            createTargetHandleId(oppositeSide)
+          ),
           eds
         )
       );
@@ -392,6 +404,24 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
   );
 
   console.log({ nodes, edges });
+
+  // Log node coordinates, width, and height on each render
+  useEffect(() => {
+    console.log('=== Node Debug Info ===');
+    nodes.forEach((node) => {
+      // Get the node with measured dimensions from React Flow
+      const measuredNode = getNode(node.id);
+      console.log(`Node ${node.id}:`, {
+        type: node.type,
+        x: node.position.x,
+        y: node.position.y,
+        width: measuredNode?.width || measuredNode?.measured?.width || 'undefined',
+        height: measuredNode?.height || measuredNode?.measured?.height || 'undefined',
+        measured: measuredNode?.measured || 'undefined',
+      });
+    });
+    console.log('=====================');
+  }, [nodes, getNode]);
 
   return (
     <GraphProvider onBranchResponse={onBranchResponse} onSendPrompt={onSendPrompt}>
