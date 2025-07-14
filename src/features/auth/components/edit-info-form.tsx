@@ -9,9 +9,9 @@ import {
 } from '@/components/ui/form/form';
 import { Input } from '@/components/ui/input/input';
 import { zodResolver } from '@hookform/resolvers/zod';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { EditProfileData, editProfileSchema, useEditProfile } from '../api/edit-profile';
+import { EditProfileData, editProfileSchema, useEditProfile, useGetProfile } from '../api/edit-profile';
 
 export type EditProfileFormProps = {
   onCancel?: () => void;
@@ -31,6 +31,17 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ onCancel, onSuccess }
   });
 
   const editProfile = useEditProfile();
+  const { data: profileData, isLoading } = useGetProfile();
+
+  useEffect(() => {
+    if (profileData) {
+      form.reset({
+        name: profileData.name || '',
+        email: profileData.email || '',
+        oncToken: profileData.oncToken || '',
+      });
+    }
+  }, [profileData, form]);
 
   const onSubmit: SubmitHandler<EditProfileData> = (data) => {
     editProfile.mutate(data, {
@@ -45,6 +56,10 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ onCancel, onSuccess }
       },
     });
   };
+
+  if (isLoading) {
+    return <div>Loading profile...</div>;
+  }
 
   return (
     <Form {...form}>

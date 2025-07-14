@@ -1,6 +1,6 @@
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { api } from '@/lib/axios';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 
 export const editProfileSchema = z.object({
@@ -21,5 +21,34 @@ export const useEditProfile = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },
+  });
+};
+
+const getProfile = async (): Promise<{ name: string; email: string; ONCApiToken: string }> => {
+
+    const response = await api.get('me');
+    console.log('API Response:', response);
+
+    const parsed = response as any; 
+    const user = parsed.user;
+
+    console.log("name", parsed.user.name);
+    return {
+    name: user.name,
+    email: user.email,
+    ONCApiToken: user.ONCApiToken || null
+  };
+};
+
+export const useGetProfile = () => {
+  return useQuery({
+    queryKey: ['user'],
+    queryFn: getProfile,
+    select: (data) => ({
+      name: data.name,
+      email: data.email,
+      oncToken: data.ONCApiToken,
+    }),
+    
   });
 };
