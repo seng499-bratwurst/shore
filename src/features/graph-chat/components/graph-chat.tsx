@@ -36,7 +36,12 @@ import { HandleId } from '../types/handle';
 import { Message } from '../types/message';
 import { createTemporaryEdge, messageEdgeToReactFlowEdge } from '../util/edge';
 import { createSourceHandleId, createTargetHandleId, oppositeHandleSide } from '../util/handle';
-import { branchedNodeCoordinates, generateTempNodeId, messageToNode } from '../util/node';
+import {
+  branchedNodeCoordinates,
+  generateTempNodeId,
+  messageToNode,
+  newPromptCoordinates,
+} from '../util/node';
 import GraphControls from './graph-controls';
 
 const POSITION_UPDATE_INTERVAL = 2500; // Interval to send message position updates
@@ -153,13 +158,14 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
   const handleNodeUpdates = useCallback(
     (changes: NodePositionChange[]) => {
       setNodes((nds) => applyNodeChanges(changes, nds));
+      const persistentChanges = changes.filter((change) => persistentMessageIds.has(change.id));
 
       // Optimisticlly update the position of messages that have been moved
       queryClient.setQueryData<Message[]>(
         createConversationMessagesQueryKey(conversationId),
         (prevNodes) => {
           if (!prevNodes) return [];
-          const updateMap = Object.fromEntries(changes.map((n) => [n.id, n.position]));
+          const updateMap = Object.fromEntries(persistentChanges.map((n) => [n.id, n.position]));
           return prevNodes.map((node) =>
             updateMap[node.id] ? { ...node, position: updateMap[node.id] } : node
           );
@@ -167,7 +173,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
       );
 
       // Update the latest position of each message. This will be used in the next update batch
-      changes.forEach((node) => {
+      persistentChanges.forEach((node) => {
         pendingMessagePositionUpdatesRef.current[node.id] = node;
       });
 
@@ -403,7 +409,51 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
     [nodes, createPrompt, edges, setNodes, setEdges, conversationId]
   );
 
-  console.log({ nodes, edges });
+  const handleCreateNewPrompt = useCallback(() => {
+    const promptCoordinates = newPromptCoordinates(nodes);
+    setNodes((nds) =>
+      nds.concat({
+        id: `${Date.now()}`,
+        position: promptCoordinates,
+        data: {
+          isEditable: true,
+          isLoading: false,
+        },
+        type: 'prompt',
+        draggable: true,
+      })
+    );
+  }, [setNodes, nodes]);
+
+  // Function to trigger auto-layout
+  const handleAutoLayout = useCallback(() => {
+    // Dynamically import getLayoutedElements to avoid SSR issues
+    import('../util/layout').then(({ getLayoutedElements }) => {
+      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges);
+
+      // Create NodePositionChange[] for position updates
+      const positionChanges = layoutedNodes.reduce<NodePositionChange[]>((acc, layoutedNode) => {
+        const originalNode = nodes.find((n) => n.id === layoutedNode.id);
+        if (!originalNode) return acc;
+        if (
+          originalNode.position.x !== layoutedNode.position.x ||
+          originalNode.position.y !== layoutedNode.position.y
+        ) {
+          acc.push({
+            id: layoutedNode.id,
+            type: 'position',
+            position: layoutedNode.position,
+          });
+        }
+        return acc;
+      }, []);
+
+      if (positionChanges.length > 0) {
+        handleNodeUpdates(positionChanges);
+      }
+      setEdges(layoutedEdges);
+    });
+  }, [nodes, edges]);
 
   // Log node coordinates, width, and height on each render
   useEffect(() => {
@@ -439,25 +489,16 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         <GraphControls />
         <Button
           className="absolute top-4 left-4 z-10 flex justify-center items-center"
-          onClick={() =>
-            setNodes((nds) =>
-              nds.concat({
-                id: `${Date.now()}`,
-                position: {
-                  x: Math.floor(Math.random() * 301) - 150,
-                  y: Math.floor(Math.random() * 301) - 150,
-                },
-                data: {
-                  isEditable: true,
-                  isLoading: false,
-                },
-                type: 'prompt',
-                draggable: true,
-              })
-            )
-          }
+          onClick={handleCreateNewPrompt}
         >
           New Prompt
+        </Button>
+        <Button
+          className="absolute top-4 left-32 z-10 flex justify-center items-center"
+          variant="secondary"
+          onClick={handleAutoLayout}
+        >
+          Auto Layout
         </Button>
       </ReactFlow>
     </GraphProvider>

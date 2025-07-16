@@ -1,5 +1,7 @@
 'use client';
 
+import { NEW_PROMPT_LOCATION_STRATEGY } from '../util/node';
+
 import { Button } from '@/components/ui/button/button';
 import { Checkbox } from '@/components/ui/checkbox/checkbox';
 import {
@@ -8,7 +10,15 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form/form';
+import { Input } from '@/components/ui/input/input';
 import {
   Select,
   SelectContent,
@@ -19,15 +29,26 @@ import {
 import { Separator } from '@/components/ui/separator/separator';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   GraphChatSettingsSchema,
   useSaveGraphChatSettings,
+  type DagreAlignment,
+  type DagreRanker,
   type EdgeType,
   type GraphChatSettings,
+  type LayoutDirection,
 } from '../hooks/save-graph-chat-settings';
 import { useGraphChatSettingsStore } from '../stores/graph-chat-settings-store';
+
+const promptLocationStrategyLabels: Record<NEW_PROMPT_LOCATION_STRATEGY, string> = {
+  [NEW_PROMPT_LOCATION_STRATEGY.CENTER]: 'Center',
+  [NEW_PROMPT_LOCATION_STRATEGY.TOP]: 'Top',
+  [NEW_PROMPT_LOCATION_STRATEGY.RIGHT]: 'Right',
+  [NEW_PROMPT_LOCATION_STRATEGY.LEFT]: 'Left',
+  [NEW_PROMPT_LOCATION_STRATEGY.BOTTOM]: 'Bottom',
+};
 
 const sideLabels = {
   top: 'Top',
@@ -42,6 +63,26 @@ const edgeTypeLabels: Record<EdgeType, string> = {
   smoothstep: 'Smooth Step',
   step: 'Step',
   straight: 'Straight',
+} as const;
+
+const layoutDirectionLabels: Record<LayoutDirection, string> = {
+  TB: 'Top to Bottom',
+  BT: 'Bottom to Top',
+  LR: 'Left to Right',
+  RL: 'Right to Left',
+} as const;
+
+const dagreRankerLabels: Record<DagreRanker, string> = {
+  'network-simplex': 'Network Simplex',
+  'tight-tree': 'Tight Tree',
+  'longest-path': 'Longest Path',
+} as const;
+
+const dagreAlignmentLabels: Record<NonNullable<DagreAlignment>, string> = {
+  UL: 'Upper Left',
+  UR: 'Upper Right',
+  DL: 'Down Left',
+  DR: 'Down Right',
 } as const;
 
 interface CollapsibleSectionProps {
@@ -81,19 +122,79 @@ export function GraphChatSettingsForm({
   const { settings } = useGraphChatSettingsStore();
   const saveSettings = useSaveGraphChatSettings();
 
+  // Ensure all numerical fields have default values - memoize to prevent infinite rerenders
+  const formDefaults = useMemo(
+    () => ({
+      ...settings,
+      layout: {
+        direction: settings.layout?.direction || 'TB',
+        ranksep: settings.layout?.ranksep || 200,
+        nodesep: settings.layout?.nodesep || 150,
+        edgesep: settings.layout?.edgesep || 50,
+        marginx: settings.layout?.marginx || 100,
+        marginy: settings.layout?.marginy || 100,
+        ranker: settings.layout?.ranker || 'tight-tree',
+        align: settings.layout?.align,
+      },
+      newPromptLocationStrategy:
+        settings.newPromptLocationStrategy || NEW_PROMPT_LOCATION_STRATEGY.CENTER,
+    }),
+    [settings]
+  );
+
   const form = useForm<GraphChatSettings>({
     resolver: zodResolver(GraphChatSettingsSchema),
-    defaultValues: settings,
+    defaultValues: formDefaults,
   });
 
   const onSubmit = (data: GraphChatSettings) => {
-    saveSettings(data);
-    onSubmitCallback?.();
+    console.log('Form submission data:', data);
+    try {
+      saveSettings(data);
+      onSubmitCallback?.();
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    }
+  };
+
+  const onError = (errors: any) => {
+    console.error('Form validation errors:', errors);
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
+        {/* New Prompt Placement Strategy */}
+        <CollapsibleSection
+          title="Prompt Placement Strategy"
+          description="Choose where new prompt nodes are placed by default."
+          defaultOpen={true}
+        >
+          <FormField
+            control={form.control}
+            name="newPromptLocationStrategy"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>New Prompt Placement</FormLabel>
+                <FormControl>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select placement strategy" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(promptLocationStrategyLabels).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </CollapsibleSection>
+
         {/* Node Connection Settings */}
         <CollapsibleSection
           title="Node Connection Settings"
@@ -245,6 +346,218 @@ export function GraphChatSettingsForm({
 
         <Separator />
 
+        {/* Layout Settings */}
+        <CollapsibleSection
+          title="Layout Settings"
+          description="Configure the Dagre layout algorithm settings."
+          defaultOpen={false}
+        >
+          <div className="space-y-4">
+            {/* Layout Direction */}
+            <FormField
+              control={form.control}
+              name="layout.direction"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Layout Direction</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select layout direction" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(layoutDirectionLabels).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {/* Rank Separation */}
+            <FormField
+              control={form.control}
+              name="layout.ranksep"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Rank Separation (50-500px)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={50}
+                      max={500}
+                      value={field.value?.toString() || '200'}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        field.onChange(isNaN(value) ? 200 : value);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Node Separation */}
+            <FormField
+              control={form.control}
+              name="layout.nodesep"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Node Separation (50-300px)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={50}
+                      max={300}
+                      value={field.value?.toString() || '150'}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        field.onChange(isNaN(value) ? 150 : value);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Edge Separation */}
+            <FormField
+              control={form.control}
+              name="layout.edgesep"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Edge Separation (10-200px)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={10}
+                      max={200}
+                      value={field.value?.toString() || '50'}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        field.onChange(isNaN(value) ? 50 : value);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Margin X */}
+            <FormField
+              control={form.control}
+              name="layout.marginx"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Horizontal Margin (0-200px)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={200}
+                      value={field.value?.toString() || '100'}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        field.onChange(isNaN(value) ? 100 : value);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Margin Y */}
+            <FormField
+              control={form.control}
+              name="layout.marginy"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Vertical Margin (0-200px)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={200}
+                      value={field.value?.toString() || '100'}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        field.onChange(isNaN(value) ? 100 : value);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Ranker Algorithm */}
+            <FormField
+              control={form.control}
+              name="layout.ranker"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ranking Algorithm</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select ranking algorithm" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(dagreRankerLabels).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {/* Alignment */}
+            <FormField
+              control={form.control}
+              name="layout.align"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Node Alignment (Optional)</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value || 'auto'}
+                      onValueChange={(value) =>
+                        field.onChange(value === 'auto' ? undefined : value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select alignment (none for auto)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="auto">Auto (No alignment)</SelectItem>
+                        {Object.entries(dagreAlignmentLabels).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+        </CollapsibleSection>
+
+        <Separator />
+
         {/* Edge Type Settings */}
         <CollapsibleSection
           title="Edge Type Settings"
@@ -306,7 +619,7 @@ export function GraphChatSettingsModal({ open, onClose }: GraphChatSettingsModal
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>Graph Chat Settings</DialogTitle>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto pr-2">
+        <div className="flex-1 overflow-y-auto px-2">
           <GraphChatSettingsForm onSubmit={onClose} />
         </div>
       </DialogContent>
