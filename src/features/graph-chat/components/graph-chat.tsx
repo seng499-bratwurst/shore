@@ -474,7 +474,11 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
   }, [nodes, getNode]);
 
   return (
-    <GraphProvider onBranchResponse={onBranchResponse} onSendPrompt={onSendPrompt}>
+    <GraphProvider
+      onBranchResponse={onBranchResponse}
+      onSendPrompt={onSendPrompt}
+      onAutoLayout={handleAutoLayout}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -492,13 +496,6 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
           onClick={handleCreateNewPrompt}
         >
           New Prompt
-        </Button>
-        <Button
-          className="absolute top-4 left-32 z-10 flex justify-center items-center"
-          variant="secondary"
-          onClick={handleAutoLayout}
-        >
-          Auto Layout
         </Button>
       </ReactFlow>
     </GraphProvider>
