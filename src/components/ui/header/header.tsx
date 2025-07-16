@@ -5,7 +5,7 @@ import React from 'react';
 import { Button } from '../button/button';
 import { LoginForm } from '@/features/auth/components/login-form';
 import { SignUpForm } from '@/features/auth/components/sign-up-form';
-import { EditProfileForm } from '@/features/auth/components/edit-info-form';
+import { EditProfileForm } from '@/features/profile/components/edit-info-form';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import {
   Dialog,

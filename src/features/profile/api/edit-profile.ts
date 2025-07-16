@@ -7,6 +7,30 @@ export const editProfileSchema = z.object({
   name: z.string().optional(),
   email: z.string().email().optional(),
   oncToken: z.string().optional(),
+  oldPassword: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || val.length >= 6,
+      { message: 'Password must be at least 6 characters' }
+    ),
+  newPassword: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || val.length >= 6,
+      { message: 'Password must be at least 6 characters' }
+    ),
+  newPasswordConfirmed: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || val.length >= 6,
+      { message: 'Password must be at least 6 characters' }
+    ),
+}).refine((data) => !data.newPassword || data.newPassword === data.newPasswordConfirmed, {
+  message: "Passwords don't match",
+  path: ['newPasswordConfirmed'],
 });
 
 export type EditProfileData = z.infer<typeof editProfileSchema>;
@@ -27,16 +51,12 @@ export const useEditProfile = () => {
 const getProfile = async (): Promise<{ name: string; email: string; ONCApiToken: string }> => {
 
     const response = await api.get('me');
-    console.log('API Response:', response);
-
     const parsed = response as any; 
     const user = parsed.user;
-
-    console.log("name", parsed.user.name);
     return {
-    name: user.name,
-    email: user.email,
-    ONCApiToken: user.ONCApiToken || null
+        name: user.name,
+        email: user.email,
+        ONCApiToken: user.ONCApiToken || null
   };
 };
 
