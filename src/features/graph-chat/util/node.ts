@@ -10,54 +10,51 @@ enum NEW_PROMPT_LOCATION_STRATEGY {
   BOTTOM = 'bottom',
 }
 
-const branchedNodeCoordinates = (response: Node, side: HandleSide): XYPosition => {
-  console.log(`dimensions of response node: ${response.width}x${response.height}`);
+// Padding for responses branched from prompts, and prompts branched from responses
+const branchedNodePadding = 56;
+
+// Default node dimensions
+const nodeWidth = 300;
+const nodeHeight = 120;
+
+// Padding for new prompt location to avoid overlap
+// This is used when placing a new prompt node based on the current graph state
+const newPromptLocationPadding = 40;
+
+// Calculate the coordinates for the node branched from a given node
+const branchedNodeCoordinates = (node: Node, side: HandleSide): XYPosition => {
+  const width = node.width || node.measured?.width || nodeWidth;
+  const height = node.height || node.measured?.height || nodeHeight;
 
   if (side === 'left') {
     return {
-      x: response.position.x - 400,
-      y: response.position.y + 75,
+      x: node.position.x - nodeWidth - branchedNodePadding,
+      y: node.position.y + Math.ceil(height / 2 - nodeHeight / 2),
     };
   } else if (side === 'right') {
     return {
-      x: response.position.x + (response.width || 0) + 400,
-      y: response.position.y + 75,
+      x: node.position.x + width + branchedNodePadding,
+      y: node.position.y + Math.ceil(height / 2 - nodeHeight / 2),
     };
   } else if (side === 'top') {
     return {
-      x: response.position.x,
-      y: response.position.y - 350,
+      x: node.position.x,
+      y: node.position.y - nodeHeight - branchedNodePadding,
     };
   } else if (side === 'bottom') {
-    let extra = 0;
-    console.log(`response content length: ${(response.data.content as string)?.length}`);
-    extra = (response.data.content as string)?.length / 1.1 || 0;
     return {
-      x: response.position.x,
-      y: response.position.y + extra + 250,
+      x: node.position.x,
+      y: node.position.y + height + branchedNodePadding,
     };
   }
-  return { x: response.position.x, y: response.position.y };
+  return { x: node.position.x, y: node.position.y };
 };
 
 const generateTempNodeId = () => {
   return `${Date.now()}`;
 };
 
-// Should determine the best way to place a response node based on where the prompt is.
-// This is basically a placeholder until something better is implemented
-const determinePromptBranchSide = (position: XYPosition): HandleSide => {
-  if (position.x < 0) {
-    return 'left';
-  } else if (position.x > window.innerWidth / 2) {
-    return 'right';
-  } else if (position.y < window.innerHeight / 2) {
-    return 'top';
-  } else {
-    return 'bottom';
-  }
-};
-
+// Convert a backend Message object to a Node object for the graph
 const messageToNode = (message: Message): Node => ({
   type: message.role === 'assistant' ? 'response' : 'prompt',
   position: { x: message.xCoordinate, y: message.yCoordinate },
@@ -72,23 +69,21 @@ const messageToNode = (message: Message): Node => ({
   draggable: true,
 });
 
-const nodeWidth = 300;
-const nodeHeight = 120;
-const padding = 40;
-
+// Check if a point (x, y) is overlapping with any existing nodes
 const isOverlapping = (nodes: Node[], x: number, y: number) => {
   return nodes.some((node) => {
     const width = node.width || node.measured?.width || nodeWidth;
     const height = node.height || node.measured?.height || nodeHeight;
     return (
-      x < node.position.x + width + padding &&
-      x + nodeWidth + padding > node.position.x &&
-      y < node.position.y + height + padding &&
-      y + nodeHeight + padding > node.position.y
+      x < node.position.x + width + newPromptLocationPadding &&
+      x + nodeWidth + newPromptLocationPadding > node.position.x &&
+      y < node.position.y + height + newPromptLocationPadding &&
+      y + nodeHeight + newPromptLocationPadding > node.position.y
     );
   });
 };
 
+// Get the average position of all nodes to help determine new prompt placement
 const getAvgPosition = (nodes: Node[]): XYPosition => {
   if (nodes.length === 0) return { x: 0, y: 0 };
   const avg = nodes.reduce(
@@ -104,6 +99,8 @@ const getAvgPosition = (nodes: Node[]): XYPosition => {
   };
 };
 
+// Get the node with the extreme position based on the specified side
+// This is used to determine where to place new prompts based on existing nodes
 const getExtremeNode = (nodes: Node[], side: NEW_PROMPT_LOCATION_STRATEGY): Node | undefined => {
   if (nodes.length === 0) return undefined;
   switch (side) {
@@ -132,6 +129,8 @@ const getExtremeNode = (nodes: Node[], side: NEW_PROMPT_LOCATION_STRATEGY): Node
   }
 };
 
+// Find a non-overlapping position for a new node based on existing nodes
+// This will spiral out from the given x, y position until a valid position is found
 const findNonOverlappingPosition = (nodes: Node[], x: number, y: number): XYPosition => {
   let attempts = 0;
   const maxAttempts = 50;
@@ -147,6 +146,8 @@ const findNonOverlappingPosition = (nodes: Node[], x: number, y: number): XYPosi
   return { x: newX, y: newY };
 };
 
+// Generate coordinates for a new prompt node based on the current graph state
+// This uses the configured strategy to determine where to place the new prompt
 const newPromptCoordinates = (nodes: Node[]): XYPosition => {
   const strategy = useGraphChatSettingsStore.getState().settings.newPromptLocationStrategy;
   if (nodes.length === 0) {
@@ -166,7 +167,7 @@ const newPromptCoordinates = (nodes: Node[]): XYPosition => {
       // Place to the left of the leftmost node, vertically centered
       return findNonOverlappingPosition(
         nodes,
-        leftNode.position.x - nodeWidth - padding,
+        leftNode.position.x - nodeWidth - newPromptLocationPadding,
         leftNode.position.y + (leftNode.height || nodeHeight) / 2 - nodeHeight / 2
       );
     }
@@ -176,7 +177,7 @@ const newPromptCoordinates = (nodes: Node[]): XYPosition => {
       // Place to the right of the rightmost node, vertically centered
       return findNonOverlappingPosition(
         nodes,
-        rightNode.position.x + (rightNode.width || nodeWidth) + padding,
+        rightNode.position.x + (rightNode.width || nodeWidth) + newPromptLocationPadding,
         rightNode.position.y + (rightNode.height || nodeHeight) / 2 - nodeHeight / 2
       );
     }
@@ -187,7 +188,7 @@ const newPromptCoordinates = (nodes: Node[]): XYPosition => {
       return findNonOverlappingPosition(
         nodes,
         topNode.position.x + (topNode.width || nodeWidth) / 2 - nodeWidth / 2,
-        topNode.position.y - nodeHeight - padding
+        topNode.position.y - nodeHeight - newPromptLocationPadding
       );
     }
     case NEW_PROMPT_LOCATION_STRATEGY.BOTTOM: {
@@ -197,7 +198,7 @@ const newPromptCoordinates = (nodes: Node[]): XYPosition => {
       return findNonOverlappingPosition(
         nodes,
         bottomNode.position.x + (bottomNode.width || nodeWidth) / 2 - nodeWidth / 2,
-        bottomNode.position.y + (bottomNode.height || nodeHeight) + padding
+        bottomNode.position.y + (bottomNode.height || nodeHeight) + newPromptLocationPadding
       );
     }
     default:
@@ -207,7 +208,6 @@ const newPromptCoordinates = (nodes: Node[]): XYPosition => {
 
 export {
   branchedNodeCoordinates,
-  determinePromptBranchSide,
   generateTempNodeId,
   messageToNode,
   NEW_PROMPT_LOCATION_STRATEGY,

@@ -3,8 +3,6 @@ import dagre from 'dagre';
 import { useGraphChatSettingsStore } from '../stores/graph-chat-settings-store';
 import { ReactFlowEdge } from '../types/edge';
 
-// Dagre graph will be instantiated per layout calculation
-
 export type LayoutDirection = 'TB' | 'BT' | 'LR' | 'RL';
 
 interface LayoutOptions {

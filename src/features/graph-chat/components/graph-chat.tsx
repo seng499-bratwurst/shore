@@ -36,6 +36,7 @@ import { HandleId } from '../types/handle';
 import { Message } from '../types/message';
 import { createTemporaryEdge, messageEdgeToReactFlowEdge } from '../util/edge';
 import { createSourceHandleId, createTargetHandleId, oppositeHandleSide } from '../util/handle';
+import { getLayoutedElements } from '../util/layout';
 import {
   branchedNodeCoordinates,
   generateTempNodeId,
@@ -117,7 +118,6 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
   );
 
   useEffect(() => {
-    console.log('hasLoadedInitialGraph:', hasLoadedInitialGraph);
     if (hasLoadedInitialGraph) {
       console.log({ messages, messageEdges });
       setNodes([]);
@@ -199,7 +199,6 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
 
   const onConnect: OnConnect = useCallback(
     (connection) => {
-      console.log('onConnect:', connection);
       const sourceNode = nodes.find(
         (node) => node.id === connection.source && node.type === 'response'
       );
@@ -427,51 +426,30 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
 
   // Function to trigger auto-layout
   const handleAutoLayout = useCallback(() => {
-    // Dynamically import getLayoutedElements to avoid SSR issues
-    import('../util/layout').then(({ getLayoutedElements }) => {
-      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges);
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges);
 
-      // Create NodePositionChange[] for position updates
-      const positionChanges = layoutedNodes.reduce<NodePositionChange[]>((acc, layoutedNode) => {
-        const originalNode = nodes.find((n) => n.id === layoutedNode.id);
-        if (!originalNode) return acc;
-        if (
-          originalNode.position.x !== layoutedNode.position.x ||
-          originalNode.position.y !== layoutedNode.position.y
-        ) {
-          acc.push({
-            id: layoutedNode.id,
-            type: 'position',
-            position: layoutedNode.position,
-          });
-        }
-        return acc;
-      }, []);
-
-      if (positionChanges.length > 0) {
-        handleNodeUpdates(positionChanges);
+    // Create NodePositionChange[] for position updates
+    const positionChanges = layoutedNodes.reduce<NodePositionChange[]>((acc, layoutedNode) => {
+      const originalNode = nodes.find((n) => n.id === layoutedNode.id);
+      if (!originalNode) return acc;
+      if (
+        originalNode.position.x !== layoutedNode.position.x ||
+        originalNode.position.y !== layoutedNode.position.y
+      ) {
+        acc.push({
+          id: layoutedNode.id,
+          type: 'position',
+          position: layoutedNode.position,
+        });
       }
-      setEdges(layoutedEdges);
-    });
-  }, [nodes, edges]);
+      return acc;
+    }, []);
 
-  // Log node coordinates, width, and height on each render
-  useEffect(() => {
-    console.log('=== Node Debug Info ===');
-    nodes.forEach((node) => {
-      // Get the node with measured dimensions from React Flow
-      const measuredNode = getNode(node.id);
-      console.log(`Node ${node.id}:`, {
-        type: node.type,
-        x: node.position.x,
-        y: node.position.y,
-        width: measuredNode?.width || measuredNode?.measured?.width || 'undefined',
-        height: measuredNode?.height || measuredNode?.measured?.height || 'undefined',
-        measured: measuredNode?.measured || 'undefined',
-      });
-    });
-    console.log('=====================');
-  }, [nodes, getNode]);
+    if (positionChanges.length > 0) {
+      handleNodeUpdates(positionChanges);
+    }
+    setEdges(layoutedEdges);
+  }, [nodes, edges]);
 
   return (
     <GraphProvider

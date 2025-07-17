@@ -195,6 +195,8 @@ export function GraphChatSettingsForm({
           />
         </CollapsibleSection>
 
+        <Separator />
+
         {/* Node Connection Settings */}
         <CollapsibleSection
           title="Node Connection Settings"
@@ -271,7 +273,7 @@ export function GraphChatSettingsForm({
             </div>
           </div>
 
-          <Separator className="my-4" />
+          <Separator />
 
           {/* Response Node Settings */}
           <div className="space-y-4">
