@@ -5,9 +5,11 @@ import { z } from 'zod';
 // Define the individual file schema
 const fileItemSchema = z.object({
   id: z.number(),
-  fileName: z.string(),
+  name: z.string(),
   createdAt: z.string(),
-  uploadedBy: z.string(),
+  uploadedBy: z.string().optional(),
+  sourceLink: z.string().optional(),
+  sourceType: z.string().optional(),
 });
 
 
@@ -25,6 +27,8 @@ export type File = z.infer<typeof fileItemSchema>;
 export type Document = {
   id: number;
   name: string;
+  sourceLink: string;
+  sourceType: string;
   uploadDate: string;
   positiveRatings: number;
   negativeRatings: number;
@@ -34,7 +38,7 @@ export type Document = {
 // API call function
 const fetchFiles = async (): Promise<File[]> => {
   const response = await api.get('files');
-  console.log('API Response:', response);
+  console.log('API Response! :', response);
   
   const parsed = z.array(fileItemSchema).parse(response);
   return parsed;
