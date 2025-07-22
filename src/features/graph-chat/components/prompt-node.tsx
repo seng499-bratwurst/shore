@@ -1,31 +1,51 @@
-import { Button } from '@/components/ui/button/button';
 import { Textarea } from '@/components/ui/textarea/textarea';
-import { Position, type Node, type NodeProps } from '@xyflow/react';
+import { type Node, type NodeProps } from '@xyflow/react';
 import React from 'react';
 import { FiSend } from 'react-icons/fi';
 import { useGraphContext } from '../contexts/graph-provider';
+import { useGraphChatSettingsStore } from '../stores/graph-chat-settings-store';
+import { HandleSide } from '../types/handle';
+import { BaseNodeActions } from './node-edge-controls';
 import { NodeHandles } from './node-handles';
+
+const PromptSendControls: React.FC<{
+  onSendPrompt: (position: HandleSide) => void;
+  isLoading: boolean;
+}> = ({ onSendPrompt, isLoading }) => {
+  const { settings } = useGraphChatSettingsStore();
+
+  return (
+    <BaseNodeActions
+      onAction={onSendPrompt}
+      enabledSides={settings.prompt.outgoingSides}
+      isDisabled={isLoading}
+      icon={FiSend}
+      buttonVariant="default"
+    />
+  );
+};
 
 type PromptNodeType = Node<{ isLoading?: boolean; isEditable?: boolean; content?: string }>;
 
 const PromptNode: React.FC<NodeProps<PromptNodeType>> = (props) => {
   const [prompt, setPrompt] = React.useState<string>('');
+  const { settings } = useGraphChatSettingsStore();
 
-  const { onSendPrompt } = useGraphContext();
+  const { onSendPrompt: _onSendPrompt } = useGraphContext();
 
-  const handleSendPrompt = () => {
-    if (prompt.trim() === '') return;
-
-    onSendPrompt({
-      content: prompt,
-      id: props.id,
-      position: Position.Top,
-    });
+  const onSendPrompt = (position: HandleSide) => {
+    if (props.data.isEditable && prompt.trim() !== '') {
+      _onSendPrompt({
+        content: prompt,
+        id: props.id,
+        position,
+      });
+    }
   };
 
   return (
     <div className="relative bg-card rounded-b-lg shadow-md flex flex-col min-w-[250px] max-w-[300px] min-h-[100px]">
-      <NodeHandles />
+      <NodeHandles settings={settings.prompt} />
       <div className="bg-primary text-primary-foreground w-full text-sm px-sm py-xs">Prompt</div>
       <div className="bg-card p-xs">
         {props.data.isEditable ? (
@@ -40,21 +60,11 @@ const PromptNode: React.FC<NodeProps<PromptNodeType>> = (props) => {
           props.data.content
         )}
       </div>
-      {props.data.isEditable && (
-        <div className="flex justify-end px-sm pb-xs">
-          <Button
-            disabled={props.data.isLoading}
-            size="icon"
-            variant="default"
-            aria-label="Send"
-            onClick={handleSendPrompt}
-          >
-            <FiSend />
-          </Button>
-        </div>
+      {props.data.isEditable && prompt.length > 0 && (
+        <PromptSendControls onSendPrompt={onSendPrompt} isLoading={!!props.data.isLoading} />
       )}
     </div>
   );
 };
 
-export { PromptNode };
+export { BaseNodeActions, PromptNode };
