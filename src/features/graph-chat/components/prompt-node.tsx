@@ -1,7 +1,7 @@
 import { Textarea } from '@/components/ui/textarea/textarea';
 import { type Node, type NodeProps } from '@xyflow/react';
 import React from 'react';
-import { FiSend } from 'react-icons/fi';
+import { FiSend, FiLoader } from 'react-icons/fi';
 import { useGraphContext } from '../contexts/graph-provider';
 import { useGraphChatSettingsStore } from '../stores/graph-chat-settings-store';
 import { HandleSide } from '../types/handle';
@@ -49,13 +49,18 @@ const PromptNode: React.FC<NodeProps<PromptNodeType>> = (props) => {
       <div className="bg-primary text-primary-foreground w-full text-sm px-sm py-xs">Prompt</div>
       <div className="bg-card p-xs">
         {props.data.isEditable ? (
-          <Textarea
-            className="flex-1 px-sm py-2xs text-sm !bg-card border-none focus:ring-0 resize-none"
-            placeholder="Type your prompt here..."
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            disabled={props.data.isLoading}
-          />
+          <>
+            <Textarea
+              className="flex-1 px-sm py-2xs text-sm !bg-card border-none focus:ring-0 resize-none"
+              placeholder="Type your prompt here..."
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              disabled={props.data.isLoading}
+            />
+            {props.data.isLoading && (
+              <FiLoader className="absolute top-2 right-2 w-4 h-4 animate-spin text-muted-foreground" />
+            )}
+          </>
         ) : (
           props.data.content
         )}
