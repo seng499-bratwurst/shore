@@ -1,22 +1,51 @@
 'use client';
 
+import { api } from '@/lib/axios';
 import { create } from 'zustand';
+import { Role, User } from '../types/auth';
 
 type AuthState = {
-  token: string | null;
   isLoggedIn: boolean;
+  user: User;
+  roles: Role[];
+  isHydrating: boolean;
 };
 
-type AuthActions = {
-  login: (token: string) => void;
-  logout: () => void;
+type AuthStore = AuthState;
+
+type CurrentUserResponse = {
+  roles: Role[];
+  user: User;
 };
 
-type AuthStore = AuthState & AuthActions;
+const getCurrentUser = (): Promise<CurrentUserResponse> => api.get('/me');
 
-export const useAuthStore = create<AuthStore>()((set) => ({
-  token: null,
-  isLoggedIn: false,
-  login: (token: string) => set(() => ({ token, isLoggedIn: true })),
-  logout: () => set(() => ({ token: null, isLoggedIn: false })),
-}));
+export const useAuthStore = create<AuthStore>()((set) => {
+  const initialState: AuthStore = {
+    isLoggedIn: false,
+    user: {} as User,
+    roles: [],
+    isHydrating: true,
+  };
+
+  // Immediately hydrate the store
+  getCurrentUser()
+    .then((data) => {
+      set({
+        user: data.user,
+        roles: data.roles,
+        isLoggedIn: true,
+        isHydrating: false,
+      });
+    })
+    .catch(() => {
+      set({
+        user: {} as User,
+        roles: [],
+        isLoggedIn: false,
+        isHydrating: false,
+      });
+    });
+
+  return { ...initialState };
+});

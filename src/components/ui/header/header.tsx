@@ -4,6 +4,7 @@ import Image from 'next/image';
 import React from 'react';
 import { Button } from '../button/button';
 
+import { useLogout } from '@/features/auth/api/logout';
 import { LoginForm } from '@/features/auth/components/login-form';
 import { SignUpForm } from '@/features/auth/components/sign-up-form';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
@@ -15,9 +16,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../dialog/dialog';
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+} from '../navigation-menu/navigation-menu';
 
 export default function Header() {
-  const { isLoggedIn } = useAuthStore();
+  const { isLoggedIn, isHydrating } = useAuthStore();
+  const logout = useLogout();
   return (
     <nav className="fixed flex items-center justify-between p-4 bg-primary-50 dark:bg-primary-900 w-full h-16 shadow-sm z-50">
       <div className="flex items-center">
@@ -55,7 +63,10 @@ export default function Header() {
                   <LoginForm
                     onCancel={() => setOpenDialog(null)}
                     onSignUp={() => setOpenDialog('signup')}
-                    onSuccess={() => setOpenDialog(null)}
+                    onSuccess={() => {
+                      setOpenDialog(null);
+                      console.log('Set openDialog to null after login success');
+                    }}
                   />
                 </DialogContent>
               </Dialog>
@@ -86,8 +97,27 @@ export default function Header() {
               </Dialog>
             );
 
-            return isLoggedIn ? (
-              <></>
+            return isHydrating ? (
+              'Loading...'
+            ) : isLoggedIn ? (
+              <NavigationMenu>
+                <NavigationMenuList>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink href="/admin">Admin</NavigationMenuLink>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <button
+                        type="button"
+                        onClick={() => logout.mutate()}
+                        className="w-full text-left"
+                      >
+                        Logout
+                      </button>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                </NavigationMenuList>
+              </NavigationMenu>
             ) : (
               <>
                 {loginDialog}

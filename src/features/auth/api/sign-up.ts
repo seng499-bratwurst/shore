@@ -1,4 +1,3 @@
-import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { api } from '@/lib/axios';
 import { useMutation } from '@tanstack/react-query';
 import { z } from 'zod';
@@ -17,13 +16,7 @@ const signUp = async (data: SignUpData): Promise<AuthResponse> =>
   await api.post<SignUpData, AuthResponse>('register', data);
 
 export const useSignUp = () => {
-  const login = useAuthStore((state) => state.login);
   return useMutation({
     mutationFn: signUp,
-    onSuccess: (data) => {
-      if (data && data.jwt) {
-        login(data.jwt);
-      }
-    },
   });
 };
