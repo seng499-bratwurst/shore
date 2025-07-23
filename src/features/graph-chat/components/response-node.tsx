@@ -1,10 +1,13 @@
 import { Button } from '@/components/ui/button/button';
-import { NodeEdgeControls } from '@/features/graph-chat/components/node-edge-controls';
-import { NodeHandles } from '@/features/graph-chat/components/node-handles';
-import type { Node, NodeProps } from '@xyflow/react';
+import { type Node, type NodeProps } from '@xyflow/react';
 import React, { useState } from 'react';
-import { FiDownload, FiThumbsDown, FiThumbsUp } from 'react-icons/fi';
+import { FiDownload, FiPlus, FiThumbsDown, FiThumbsUp } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
+import { useGraphContext } from '../contexts/graph-provider';
+import { useGraphChatSettingsStore } from '../stores/graph-chat-settings-store';
+import { HandleSide } from '../types/handle';
+import { BaseNodeActions } from './node-edge-controls';
+import { NodeHandles } from './node-handles';
 
 type ResponseNodeType = Node<{ content: string }>;
 
@@ -17,14 +20,38 @@ const tempData = [
   ['3:00pm', -3],
 ];
 
+const ResponseBranchControls: React.FC<{
+  onBranchResponse: (position: HandleSide) => void;
+}> = ({ onBranchResponse }) => {
+  const { settings } = useGraphChatSettingsStore();
+
+  return (
+    <BaseNodeActions
+      onAction={onBranchResponse}
+      enabledSides={settings.response.outgoingSides}
+      icon={FiPlus}
+      buttonVariant="secondary"
+    />
+  );
+};
+
 const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
   const [thumb, setThumb] = useState<'up' | 'down' | null>(null);
+  const { settings } = useGraphChatSettingsStore();
   const { data } = props;
+
+  const { onBranchResponse: _onBranchResponse } = useGraphContext();
+  const onBranchResponse = (position: HandleSide) => {
+    _onBranchResponse({
+      id: props.id,
+      handleSide: position,
+    });
+  };
 
   return (
     <div className="relative bg-card text-card-foreground rounded-b-lg shadow-md flex flex-col min-w-[100px] max-w-[300px]">
-      <NodeHandles />
-      <NodeEdgeControls {...props} />
+      <ResponseBranchControls onBranchResponse={onBranchResponse} />
+      <NodeHandles settings={settings.response} />
       <div className="bg-secondary text-secondary-foreground w-full text-sm px-sm py-xs">
         Response
       </div>
