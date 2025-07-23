@@ -10,6 +10,9 @@ type Message = {
   xCoordinate: number;
   yCoordinate: number;
   createdAt: Date;
+  // Properties for streaming responses
+  isStreaming?: boolean;
+  isComplete?: boolean;
 };
 
 export type { Message };

@@ -9,7 +9,11 @@ import { HandleSide } from '../types/handle';
 import { BaseNodeActions } from './node-edge-controls';
 import { NodeHandles } from './node-handles';
 
-type ResponseNodeType = Node<{ content: string }>;
+type ResponseNodeType = Node<{ 
+  content: string;
+  isStreaming?: boolean;
+  isComplete?: boolean;
+ }>;
 
 // Dummy temperature data until we get LLM integrated
 const tempData = [
@@ -48,15 +52,26 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
     });
   };
 
+  const isStreaming = data.isStreaming && !data.isComplete;
+
   return (
     <div className="relative bg-card text-card-foreground rounded-b-lg shadow-md flex flex-col min-w-[100px] max-w-[300px]">
       <ResponseBranchControls onBranchResponse={onBranchResponse} />
       <NodeHandles settings={settings.response} />
       <div className="bg-secondary text-secondary-foreground w-full text-sm px-sm py-xs">
         Response
+        {isStreaming && (
+          <span className="ml-2 text-xs animate-pulse">.</span>
+        )}
       </div>
       <div className="flex flex-col px-sm space-y-xs mt-xs">
-        <ReactMarkdown>{data.content}</ReactMarkdown>
+        <div>
+          <ReactMarkdown>{data.content}</ReactMarkdown>
+          {isStreaming && (
+            <span className="ml-1 text-blue-500 animate-pulse font-bold">|</span>
+          )}
+        </div>
+        {/* <ReactMarkdown>{data.content}</ReactMarkdown> */}
         <div className="flex justify-between items-center mb-xs">
           <div className="flex">
             <Button
