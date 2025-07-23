@@ -13,6 +13,9 @@ import { useState } from 'react';
 import { Conversation } from '../../graph-chat/types/conversation';
 import { useUpdateConversationTitle } from '../api/update-conversation-title';
 
+// Constants
+const MAX_TITLE_LENGTH = 100;
+
 interface EditTitleModalProps {
   conversation: Conversation;
   open: boolean;
@@ -92,7 +95,7 @@ export function EditTitleModal({ conversation, open, onClose }: EditTitleModalPr
               onChange={handleTitleChange}
               placeholder="Enter new conversation title"
               disabled={updateConversationTitle.isPending}
-              maxLength={100} // Add reasonable length limit
+              maxLength={MAX_TITLE_LENGTH}
               className={error ? 'border-red-500 focus:border-red-500' : ''}
             />
             {error && (

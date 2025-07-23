@@ -35,16 +35,20 @@ export function ChatHistorySidebar() {
     });
   }, [conversations, searchQuery]);
 
+  const performSearch = () => {
+    // Search is performed in real-time via filteredConversations
+    // This function can be used for additional search actions if needed
+  };
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Search is performed in real-time via filteredConversations
-    // This handler can be used for additional search actions if needed
+    performSearch();
   };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleSearchSubmit({ preventDefault: () => {} } as React.FormEvent);
+      performSearch();
     }
   };
 

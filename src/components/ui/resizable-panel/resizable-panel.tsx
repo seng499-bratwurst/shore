@@ -18,6 +18,11 @@ interface ResizablePanelProps {
    * Whether to show resize indicators on hover
    */
   showIndicators?: boolean;
+  /**
+   * Custom selector for finding the target element to apply the CSS variable.
+   * If not provided, will use default fallback chain.
+   */
+  targetSelector?: string;
 }
 
 export type { ResizablePanelProps };
@@ -29,7 +34,8 @@ export function ResizablePanel({
   maxWidth = 400,
   className,
   cssVariable = '--sidebar-width',
-  showIndicators = true
+  showIndicators = true,
+  targetSelector
 }: ResizablePanelProps) {
   const [panelWidth, setPanelWidth] = useState(defaultWidth);
   const [isResizing, setIsResizing] = useState(false);
@@ -86,17 +92,28 @@ export function ResizablePanel({
   // Apply the width to the CSS custom property
   useEffect(() => {
     if (containerRef.current) {
-      // Update the CSS custom property on the nearest suitable ancestor
-      const targetElement = 
-        containerRef.current.closest('[data-slot="sidebar-wrapper"]') ||
-        containerRef.current.closest('[data-resizable]') ||
-        containerRef.current;
+      let targetElement: Element | null = null;
+      
+      // Use custom selector if provided
+      if (targetSelector) {
+        targetElement = containerRef.current.closest(targetSelector);
+      } else {
+        // Use default fallback chain
+        targetElement = 
+          containerRef.current.closest('[data-slot="sidebar-wrapper"]') ||
+          containerRef.current.closest('[data-resizable]') ||
+          containerRef.current;
+      }
       
       if (targetElement) {
         (targetElement as HTMLElement).style.setProperty(cssVariable, `${panelWidth}px`);
+      } else {
+        console.warn(
+          `ResizablePanel: Could not find target element ${targetSelector ? `with selector "${targetSelector}"` : 'using default selectors'}. The panel may not resize properly.`
+        );
       }
     }
-  }, [panelWidth, cssVariable]);
+  }, [panelWidth, cssVariable, targetSelector]);
 
   return (
     <div
