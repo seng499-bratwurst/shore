@@ -21,13 +21,18 @@ interface EditTitleModalProps {
 
 export function EditTitleModal({ conversation, open, onClose }: EditTitleModalProps) {
   const [newTitle, setNewTitle] = useState(conversation.title || '');
+  const [error, setError] = useState<string | null>(null);
   const updateConversationTitle = useUpdateConversationTitle();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Clear any previous errors
+    setError(null);
+    
     if (!newTitle.trim()) {
-      return; // Don't submit empty titles
+      setError('Title cannot be empty');
+      return;
     }
 
     updateConversationTitle.mutate(
@@ -37,11 +42,12 @@ export function EditTitleModal({ conversation, open, onClose }: EditTitleModalPr
       },
       {
         onSuccess: () => {
+          setError(null);
           onClose();
         },
         onError: (error) => {
           console.error('Failed to update conversation title:', error);
-          // You could add toast notification here
+          setError('Failed to update conversation title. Please try again.');
         },
       }
     );
@@ -49,7 +55,16 @@ export function EditTitleModal({ conversation, open, onClose }: EditTitleModalPr
 
   const handleCancel = () => {
     setNewTitle(conversation.title || ''); // Reset to original title
+    setError(null); // Clear any errors
     onClose();
+  };
+
+  // Reset error when user starts typing
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewTitle(e.target.value);
+    if (error) {
+      setError(null);
+    }
   };
 
   return (
@@ -74,11 +89,17 @@ export function EditTitleModal({ conversation, open, onClose }: EditTitleModalPr
             <Input
               id="new-title"
               value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
+              onChange={handleTitleChange}
               placeholder="Enter new conversation title"
               disabled={updateConversationTitle.isPending}
               maxLength={100} // Add reasonable length limit
+              className={error ? 'border-red-500 focus:border-red-500' : ''}
             />
+            {error && (
+              <p className="text-sm text-red-600 mt-1" role="alert">
+                {error}
+              </p>
+            )}
           </div>
 
           <div className="flex justify-end space-x-2">

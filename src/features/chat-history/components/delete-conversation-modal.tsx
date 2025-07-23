@@ -7,7 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog/dialog';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Conversation } from '../../graph-chat/types/conversation';
 import { useDeleteConversation } from '../api/delete-conversation';
 
@@ -24,27 +25,36 @@ export function DeleteConversationModal({
 }: DeleteConversationModalProps) {
   const deleteConversation = useDeleteConversation();
   const router = useRouter();
+  const pathname = usePathname();
+  const [error, setError] = useState<string | null>(null);
 
   const displayTitle = conversation.title || `Chat ${conversation.id}`;
 
   const handleConfirm = () => {
+    setError(null); // Clear any previous errors
+    
     deleteConversation.mutate(conversation.id, {
       onSuccess: () => {
         onClose();
         // If user is currently viewing the deleted conversation, redirect to chat home
-        if (window.location.pathname === `/chat/${conversation.id}`) {
+        if (pathname === `/chat/${conversation.id}`) {
           router.push('/chat');
         }
       },
       onError: (error) => {
         console.error('Failed to delete conversation:', error);
-        // You could add toast notification here
+        setError('Failed to delete conversation. Please try again.');
       },
     });
   };
 
+  const handleClose = () => {
+    setError(null); // Clear errors when closing
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Delete Conversation</DialogTitle>
@@ -59,11 +69,17 @@ export function DeleteConversationModal({
             Caution! This action cannot be undone.
           </p>
 
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2" role="alert">
+              {error}
+            </p>
+          )}
+
           <div className="flex justify-end space-x-2">
             <Button
               type="button"
               variant="outline"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={deleteConversation.isPending}
             >
               Cancel

@@ -43,7 +43,8 @@ export function ChatHistorySidebar() {
 
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleSearchSubmit(e as any);
+      e.preventDefault();
+      handleSearchSubmit({ preventDefault: () => {} } as React.FormEvent);
     }
   };
 
