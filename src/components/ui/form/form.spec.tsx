@@ -7,7 +7,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 
 expect.extend(toHaveNoViolations);
 
-function TestForm({ onSubmit }: { onSubmit: (data: any) => void }) {
+type FormData = {
+  email: string;
+};
+
+function TestForm({ onSubmit }: { onSubmit: (data: FormData) => void }) {
   const methods = useForm({
     defaultValues: { email: '' },
   });
