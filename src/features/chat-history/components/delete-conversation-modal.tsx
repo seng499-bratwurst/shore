@@ -1,12 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog/dialog';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Conversation } from '../../graph-chat/types/conversation';
@@ -18,10 +13,10 @@ interface DeleteConversationModalProps {
   onClose: () => void;
 }
 
-export function DeleteConversationModal({ 
-  conversation, 
-  open, 
-  onClose 
+export function DeleteConversationModal({
+  conversation,
+  open,
+  onClose,
 }: DeleteConversationModalProps) {
   const deleteConversation = useDeleteConversation();
   const router = useRouter();
@@ -32,7 +27,7 @@ export function DeleteConversationModal({
 
   const handleConfirm = () => {
     setError(null); // Clear any previous errors
-    
+
     deleteConversation.mutate(conversation.id, {
       onSuccess: () => {
         onClose();
@@ -59,18 +54,19 @@ export function DeleteConversationModal({
         <DialogHeader>
           <DialogTitle>Delete Conversation</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete "{displayTitle}"?
-          </p>
-          
-          <p className="text-sm text-red-600 font-medium">
-            Caution! This action cannot be undone.
+            Are you sure you want to delete &quot;{displayTitle}&quot;?
           </p>
 
+          <p className="text-sm text-red-600 font-medium">Caution! This action cannot be undone.</p>
+
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2" role="alert">
+            <p
+              className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2"
+              role="alert"
+            >
               {error}
             </p>
           )}
