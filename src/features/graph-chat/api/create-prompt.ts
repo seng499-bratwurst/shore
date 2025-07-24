@@ -46,11 +46,7 @@ export const useCreatePrompt = (
 ): UseMutationResult<CreatePromptResponse, unknown, CreatePromptRequest, unknown> => {
   const queryClient = useQueryClient();
 
-  const updateCache = (
-    response: CreatePromptResponse,
-    request: CreatePromptRequest,
-    _: unknown
-  ) => {
+  const updateCache = (response: CreatePromptResponse, request: CreatePromptRequest) => {
     queryClient.setQueryData<Message[]>(
       createConversationMessagesQueryKey(conversationId),
       (messages) => {

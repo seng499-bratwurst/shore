@@ -1,12 +1,12 @@
 'use client';
 
+import { LoginForm } from '@/features/auth/components/login-form';
+import { SignUpForm } from '@/features/auth/components/sign-up-form';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { EditProfileForm } from '@/features/profile/components/edit-info-form';
 import Image from 'next/image';
 import React from 'react';
 import { Button } from '../button/button';
-import { LoginForm } from '@/features/auth/components/login-form';
-import { SignUpForm } from '@/features/auth/components/sign-up-form';
-import { EditProfileForm } from '@/features/profile/components/edit-info-form';
-import { useAuthStore } from '@/features/auth/stores/auth-store';
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,10 @@ import {
 
 export default function Header() {
   const { isLoggedIn } = useAuthStore();
+  const [openDialog, setOpenDialog] = React.useState<'login' | 'signup' | 'edit-profile' | null>(
+    null
+  );
+
   return (
     <nav className="fixed flex items-center justify-between p-4 bg-primary-50 dark:bg-primary-900 w-full h-16 shadow-sm z-50">
       <div className="flex items-center">
@@ -35,7 +39,6 @@ export default function Header() {
         <div className="flex items-center gap-[10px]">
           {/* State management for dialog switching */}
           {(() => {
-            const [openDialog, setOpenDialog] = React.useState<'login' | 'signup' | 'edit-profile' | null>(null);
             // Login Dialog
             const loginDialog = (
               <Dialog
