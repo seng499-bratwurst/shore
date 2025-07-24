@@ -9,6 +9,7 @@ type AuthState = {
   user: User;
   roles: Role[];
   isHydrating: boolean;
+  sessionalKey: string;
 };
 
 type AuthStore = AuthState;
@@ -18,13 +19,19 @@ type CurrentUserResponse = {
   user: User;
 };
 
+type SessionalKeyResponse = {
+  sessionId: string;
+};
+
 const getCurrentUser = (): Promise<CurrentUserResponse> => api.get('/me');
+const getSessionalKey = (): Promise<SessionalKeyResponse> => api.get('/sessional-keys');
 
 export const useAuthStore = create<AuthStore>()((set) => {
   const initialState: AuthStore = {
     isLoggedIn: false,
     user: {} as User,
     roles: [],
+    sessionalKey: '',
     isHydrating: true,
   };
 
@@ -39,12 +46,20 @@ export const useAuthStore = create<AuthStore>()((set) => {
       });
     })
     .catch(() => {
-      set({
-        user: {} as User,
-        roles: [],
-        isLoggedIn: false,
-        isHydrating: false,
-      });
+      getSessionalKey()
+        .then(({ sessionId }) => {
+          set({
+            sessionalKey: sessionId,
+            isLoggedIn: false,
+            isHydrating: false,
+          });
+        })
+        .catch(() => {
+          set({
+            isLoggedIn: false,
+            isHydrating: false,
+          });
+        });
     });
 
   return { ...initialState };
