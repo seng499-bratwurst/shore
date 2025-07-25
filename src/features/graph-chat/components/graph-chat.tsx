@@ -84,7 +84,6 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
       () => {
         const updates = { ...pendingMessagePositionUpdatesRef.current };
         pendingMessagePositionUpdatesRef.current = {};
-
         Object.entries(updates).forEach(([id, { position }]) => {
           if (!position) return;
           updateMessage.mutate({
@@ -162,9 +161,9 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         pendingMessagePositionUpdatesRef.current[node.id] = node;
       });
 
-      throttledMessagePositionUpdate();
+      if (isLoggedIn) throttledMessagePositionUpdate();
     },
-    [queryClient, throttledMessagePositionUpdate, conversationId, nodes]
+    [queryClient, throttledMessagePositionUpdate, conversationId, nodes, isLoggedIn]
   );
 
   const onNodesChange: OnNodesChange = useCallback(
