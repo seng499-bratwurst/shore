@@ -8,18 +8,23 @@ import {
   FormMessage,
 } from '@/components/ui/form/form';
 import { Input } from '@/components/ui/input/input';
+import {
+  EditProfileData,
+  editProfileSchema,
+  useEditProfile,
+  useGetProfile,
+} from '@/features/profile/api/edit-profile';
+import { useUpdatePassword } from '@/features/profile/api/password';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { EditProfileData, editProfileSchema, useEditProfile, useGetProfile } from '@/features/profile/api/edit-profile';
-import { useUpdatePassword } from '@/features/profile/api/password';
 
 export type EditProfileFormProps = {
   onCancel?: () => void;
   onSuccess?: () => void;
 };
 
-const EditProfileForm: React.FC<EditProfileFormProps> = ({ onCancel, onSuccess }) => {
+const EditProfileForm: React.FC<EditProfileFormProps> = ({ onCancel }) => {
   const [message, setMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
   const form = useForm<EditProfileData>({
@@ -51,18 +56,21 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ onCancel, onSuccess }
     }
   }, [profileData, form]);
 
-  const onSubmit: SubmitHandler<EditProfileData> = async (data) => {
+  const onSubmit: SubmitHandler<EditProfileData> = async (data: EditProfileData) => {
     setMessage(null);
     setIsError(false);
-    let hasError = false;
 
     // Handle profile update if any profile fields are filled
     if (data.name || data.email || data.oncToken) {
       try {
-        await editProfile.mutateAsync({ name: data.name, email: data.email, oncToken: data.oncToken });
+        await editProfile.mutateAsync({
+          name: data.name,
+          email: data.email,
+          oncToken: data.oncToken,
+        });
         setMessage('Profile updated successfully!');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
-        hasError = true;
         setIsError(true);
         setMessage(error?.message || 'Profile update failed. Please try again.');
       }
@@ -70,22 +78,26 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ onCancel, onSuccess }
 
     // Handle password update if password fields are filled
     if (data.oldPassword && data.newPassword && data.newPasswordConfirmed) {
-        try {
+      try {
         await updatePassword.mutateAsync({
           oldPassword: data.oldPassword,
           newPassword: data.newPassword,
           newPasswordConfirmed: data.newPasswordConfirmed,
         });
-        setMessage((prev) => (prev ? `${prev} Password updated successfully!` : 'Password updated successfully!'));
+        setMessage((prev) =>
+          prev ? `${prev} Password updated successfully!` : 'Password updated successfully!'
+        );
         form.resetField('oldPassword');
         form.resetField('newPassword');
         form.resetField('newPasswordConfirmed');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
-        hasError = true;
         setIsError(true);
         setMessage((prev) =>
           prev
-            ? `${prev} ${error?.response?.data?.error || 'Password update failed. Please try again.'}`
+            ? `${prev} ${
+                error?.response?.data?.error || 'Password update failed. Please try again.'
+              }`
             : error?.response?.data?.error || 'Password update failed. Please try again.'
         );
       }
@@ -102,9 +114,7 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ onCancel, onSuccess }
         {message && (
           <div
             className={`text-center text-sm ${
-              isError
-                ? 'text-red-600 dark:text-red-400'
-                : 'text-green-600 dark:text-green-400'
+              isError ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
             }`}
           >
             {message}
@@ -196,7 +206,7 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ onCancel, onSuccess }
             Cancel
           </Button>
           <Button type="submit" disabled={editProfile.isPending || updatePassword.isPending}>
-            {(editProfile.isPending || updatePassword.isPending) ? 'Updating...' : 'Update Profile'}
+            {editProfile.isPending || updatePassword.isPending ? 'Updating...' : 'Update Profile'}
           </Button>
         </div>
       </form>

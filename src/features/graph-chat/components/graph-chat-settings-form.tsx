@@ -157,13 +157,14 @@ export function GraphChatSettingsForm({
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onError = (errors: any) => {
     console.error('Form validation errors:', errors);
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
+      <form onSubmit={() => form.handleSubmit(onSubmit, onError)} className="space-y-6">
         {/* New Prompt Placement Strategy */}
         <CollapsibleSection
           title="Prompt Placement Strategy"

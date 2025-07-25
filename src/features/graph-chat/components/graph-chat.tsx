@@ -141,7 +141,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         )
       );
     }
-  }, [hasLoadedInitialGraph]);
+  }, [hasLoadedInitialGraph, messages, messageEdges]);
 
   // Update all edges when edge type setting changes
   useEffect(() => {
@@ -153,7 +153,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         }))
       );
     }
-  }, [settings.edgeType]);
+  }, [settings.edgeType, setEdges, edges.length]);
 
   const handleNodeUpdates = useCallback(
     (changes: NodePositionChange[]) => {
@@ -179,7 +179,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
 
       throttledMessagePositionUpdate();
     },
-    [queryClient, throttledMessagePositionUpdate, conversationId, nodes]
+    [queryClient, throttledMessagePositionUpdate, conversationId, persistentMessageIds]
   );
 
   const onNodesChange: OnNodesChange = useCallback(
@@ -223,7 +223,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         );
       }
     },
-    [nodes, edges, setEdges]
+    [nodes, setEdges]
   );
 
   const { getNode } = useReactFlow();
@@ -271,7 +271,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         )
       );
     },
-    [setEdges, edges, setNodes, nodes]
+    [setEdges, setNodes, getNode] // Get the node being branched from
   );
 
   const onSendPrompt: OnSendPrompt = useCallback(
@@ -405,7 +405,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         )
       );
     },
-    [nodes, createPrompt, edges, setNodes, setEdges, conversationId]
+    [nodes, createPrompt, edges, setEdges, conversationId]
   );
 
   const handleCreateNewPrompt = useCallback(() => {
@@ -449,7 +449,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
       handleNodeUpdates(positionChanges);
     }
     setEdges(layoutedEdges);
-  }, [nodes, edges]);
+  }, [nodes, edges, setEdges, handleNodeUpdates]);
 
   return (
     <GraphProvider

@@ -11,15 +11,6 @@ import { NodeHandles } from './node-handles';
 
 type ResponseNodeType = Node<{ content: string }>;
 
-// Dummy temperature data until we get LLM integrated
-const tempData = [
-  ['11:00am', -10],
-  ['12:00pm', -9],
-  ['1:00pm', -7],
-  ['2:00pm', -5],
-  ['3:00pm', -3],
-];
-
 const ResponseBranchControls: React.FC<{
   onBranchResponse: (position: HandleSide) => void;
 }> = ({ onBranchResponse }) => {
