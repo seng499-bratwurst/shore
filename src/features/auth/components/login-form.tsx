@@ -28,11 +28,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onCancel, onSignUp, onSuccess }) 
     },
   });
 
-  const login = useLogin();
+  const login = useLogin({ onSuccess });
 
   const onSubmit: SubmitHandler<LoginData> = (data) => {
     console.log('Form submitted:', data);
-    login.mutate(data, { onSuccess });
+    login.mutate(data);
   };
 
   return (
