@@ -67,6 +67,7 @@
     "@axe-core/playwright": "^4.10.1",
     "@axe-core/react": "^4.10.1",
     "@eslint/eslintrc": "^3",
+    "@svgr/webpack": "^8.1.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.0",
     "@types/graphlib": "^2.1.12",

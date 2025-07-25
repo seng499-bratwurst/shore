@@ -3,15 +3,29 @@ import { useSidebar } from '@/components/ui/sidebar/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip/tooltip';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { useReactFlow } from '@xyflow/react';
-import { FiMaximize, FiMinusCircle, FiPlusCircle, FiSidebar } from 'react-icons/fi';
+import { useState } from 'react';
+import { FiMaximize, FiMinusCircle, FiPlusCircle, FiSettings, FiSidebar } from 'react-icons/fi';
+import { PiGraph } from 'react-icons/pi';
+import { useGraphContext } from '../contexts/graph-provider';
+import { GraphChatSettingsModal } from './graph-chat-settings-form';
 
 const SidebarToggleButton = () => {
   const sidebar = useSidebar();
 
   return (
-    <Button onClick={sidebar.toggleSidebar} aria-label="Toggle sidebar" variant="ghost" size="icon">
-      <FiSidebar size={20} />
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          onClick={sidebar.toggleSidebar}
+          aria-label="Toggle sidebar"
+          variant="ghost"
+          size="icon"
+        >
+          <FiSidebar size={20} />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="right">Toggle sidebar</TooltipContent>
+    </Tooltip>
   );
 };
 
@@ -56,19 +70,7 @@ export default function GraphControls() {
           </TooltipTrigger>
           <TooltipContent side="right">Auto layout</TooltipContent>
         </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              onClick={sidebar.toggleSidebar}
-              aria-label="Toggle sidebar"
-              variant="ghost"
-              size="icon"
-            >
-              <FiSidebar size={20} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right">Toggle sidebar</TooltipContent>
-        </Tooltip>
+        {isLoggedIn && <SidebarToggleButton />}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

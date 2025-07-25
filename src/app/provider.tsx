@@ -13,13 +13,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const prevIsLoggedIn = usePrevious(isLoggedIn);
   const router = useRouter();
 
-  console.log('Layout rendered', { prevIsLoggedIn, isLoggedIn, isHydrating });
-
   React.useEffect(() => {
     if (prevIsLoggedIn && !isLoggedIn && !isHydrating) {
       router.replace('/');
     }
-  }, [isLoggedIn, isHydrating, prevIsLoggedIn]);
+  }, [isLoggedIn, isHydrating, prevIsLoggedIn, router]);
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>

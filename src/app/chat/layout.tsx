@@ -10,7 +10,7 @@ import { ReactNode } from 'react';
 export default function Layout({ children }: { children: ReactNode }) {
   const { isLoggedIn } = useAuthStore();
 
-  if (!isLoggedIn) return children;
+  if (!isLoggedIn) return <ReactFlowProvider>{children}</ReactFlowProvider>;
 
   return (
     <ReactFlowProvider>

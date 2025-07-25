@@ -1,13 +1,16 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '../button/button';
+import AstrolabeLogo from './astrolabe-logo';
 
 import { useLogout } from '@/features/auth/api/logout';
 import { LoginForm } from '@/features/auth/components/login-form';
 import { SignUpForm } from '@/features/auth/components/sign-up-form';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { EditProfileForm } from '@/features/profile/components/edit-info-form';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -24,8 +27,9 @@ import {
 } from '../navigation-menu/navigation-menu';
 
 export default function Header() {
-  const { isLoggedIn, isHydrating } = useAuthStore();
+  const { isLoggedIn, isHydrating, roles = [] } = useAuthStore();
   const logout = useLogout();
+  const [openDialog, setOpenDialog] = useState<'login' | 'signup' | 'edit-profile' | null>(null);
   return (
     <nav className="fixed flex items-center justify-between p-4 bg-primary-50 dark:bg-primary-900 w-full h-16 shadow-sm z-50">
       <div className="flex items-center">
@@ -36,7 +40,9 @@ export default function Header() {
           alt="Ocean Networks Canada"
           className="h-16 w-auto mr-4 "
         />
-        <h1 className="text-2xl text-neutral-900 dark:text-neutral-50 font-bold">Astrolabe</h1>
+        <Link href="/" className="flex items-center">
+          <AstrolabeLogo />
+        </Link>
       </div>
       <div>
         {/* --- Dialogs --- */}
@@ -103,9 +109,17 @@ export default function Header() {
                 onOpenChange={(open) => setOpenDialog(open ? 'edit-profile' : null)}
               >
                 <DialogTrigger asChild>
-                  <Button variant="outline" onClick={() => setOpenDialog('edit-profile')}>
-                    Edit Profile
-                  </Button>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <button
+                        type="button"
+                        onClick={() => setOpenDialog('edit-profile')}
+                        className="w-full text-left"
+                      >
+                        Edit Profile
+                      </button>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
@@ -123,24 +137,29 @@ export default function Header() {
             return isHydrating ? (
               'Loading...'
             ) : isLoggedIn ? (
-              <NavigationMenu>
-                <NavigationMenuList>
-                  <NavigationMenuItem>
-                    <NavigationMenuLink href="/admin">Admin</NavigationMenuLink>
-                  </NavigationMenuItem>
-                  <NavigationMenuItem>
-                    <NavigationMenuLink asChild>
-                      <button
-                        type="button"
-                        onClick={() => logout.mutate()}
-                        className="w-full text-left"
-                      >
-                        Logout
-                      </button>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                </NavigationMenuList>
-              </NavigationMenu>
+              <>
+                <NavigationMenu>
+                  <NavigationMenuList>
+                    {roles.includes('Admin') && (
+                      <NavigationMenuItem>
+                        <NavigationMenuLink href="/admin">Admin</NavigationMenuLink>
+                      </NavigationMenuItem>
+                    )}
+                    {editProfileDialog}
+                    <NavigationMenuItem>
+                      <NavigationMenuLink asChild>
+                        <button
+                          type="button"
+                          onClick={() => logout.mutate()}
+                          className="w-full text-left"
+                        >
+                          Logout
+                        </button>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                  </NavigationMenuList>
+                </NavigationMenu>
+              </>
             ) : (
               <>
                 {loginDialog}

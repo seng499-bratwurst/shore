@@ -180,7 +180,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
 
       if (isLoggedIn) throttledMessagePositionUpdate();
     },
-    [queryClient, throttledMessagePositionUpdate, conversationId, persistentMessageIds]
+    [queryClient, throttledMessagePositionUpdate, conversationId, persistentMessageIds, isLoggedIn]
   );
 
   const onNodesChange: OnNodesChange = useCallback(
