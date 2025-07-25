@@ -15,6 +15,7 @@ import {
   applyEdgeChanges,
   applyNodeChanges,
   Background,
+  NodeReplaceChange,
   OnConnect,
   OnNodesChange,
   ReactFlow,
@@ -58,6 +59,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
   const [conversationId, setConversationId] = useState(_conversationId);
   const [edges, setEdges] = useState<ReactFlowEdge[]>([]);
   const [nodes, setNodes] = useState<Node[]>([]);
+  const [isPromptSending, setIsPromptSending] = useState(false);
 
   const queryClient = useQueryClient();
   const pendingMessagePositionUpdatesRef = useRef<Record<string, NodePositionChange>>({});
@@ -247,7 +249,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
                 position: branchedNodeCoordinates(node, handleSide),
                 data: {
                   isEditable: true,
-                  isLoading: false,
+                  isLoading: isPromptSending,
                 },
                 type: 'prompt',
                 draggable: true,
@@ -275,7 +277,25 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
   );
 
   const onSendPrompt: OnSendPrompt = useCallback(
+
     ({ id, content, position }) => {
+
+      // Allow only one prompt to be submitted at a time
+      if (isPromptSending) return;
+      setIsPromptSending(true);
+
+      // Set all nodes to the loading state
+      setNodes((nds) =>
+        applyNodeChanges(
+          nds.map<NodeReplaceChange>((node) => ({
+            id: node.id,
+            type: 'replace',
+            item: { ...node, data: { ...node.data, isLoading: true } },
+          })),
+          nds
+        )
+      );
+
       const node = nodes.find((n) => n.id === id); // Find temporary node of the prompt being sent
       if (!node) return;
 
@@ -336,7 +356,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
                         data: {
                           content: variables.content,
                           isEditable: false,
-                          isLoading: false,
+                          isLoading: true, // Keep the prompt node in the loading state until all nodes are updated to the non-loading state
                         },
                         type: 'prompt',
                         draggable: true,
@@ -371,38 +391,34 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
                 )
               );
             }
+            // Reset all nodes to the non-loading state
+            setNodes((nds) =>
+              applyNodeChanges(
+                nds.map<NodeReplaceChange>((n) => ({
+                  id: n.id,
+                  type: 'replace',
+                  item: { ...n, data: { ...n.data, isLoading: false } },
+                })),
+                nds
+              )
+            );
+            setIsPromptSending(false); // Reset the prompt sending state
           },
           onError: (error) => {
             console.error('Error creating prompt:', error);
-            // Reset the prompt node to non-loading state when an error occurs. Allows user to try resending
+            // Reset all nodes to the non-loading state when an error occurs; allows the user to try resending
             setNodes((nds) =>
               applyNodeChanges(
-                [
-                  {
-                    id: node.id,
-                    type: 'replace',
-                    item: { ...node, data: { ...node.data, isLoading: false } },
-                  },
-                ],
+                nds.map<NodeReplaceChange>((n) => ({
+                  id: n.id,
+                  type: 'replace',
+                  item: { ...n, data: { ...n.data, isLoading: false } },
+                })),
                 nds
               )
             );
           },
         }
-      );
-
-      // Set the prompt node to loading state on send
-      setNodes((nds) =>
-        applyNodeChanges(
-          [
-            {
-              id: node.id,
-              type: 'replace',
-              item: { ...node, data: { ...node.data, isLoading: true } },
-            },
-          ],
-          nds
-        )
       );
     },
     [nodes, createPrompt, edges, setEdges, conversationId]
@@ -416,7 +432,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         position: promptCoordinates,
         data: {
           isEditable: true,
-          isLoading: false,
+          isLoading: isPromptSending,
         },
         type: 'prompt',
         draggable: true,
