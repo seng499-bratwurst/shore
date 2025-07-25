@@ -5,6 +5,7 @@ import { SignUpForm } from '@/features/auth/components/sign-up-form';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { EditProfileForm } from '@/features/profile/components/edit-info-form';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import React from 'react';
 import { Button } from '../button/button';
 import {
@@ -17,6 +18,7 @@ import {
 } from '../dialog/dialog';
 
 export default function Header() {
+  const router = useRouter();
   const { isLoggedIn } = useAuthStore();
   const [openDialog, setOpenDialog] = React.useState<'login' | 'signup' | 'edit-profile' | null>(
     null
@@ -24,7 +26,7 @@ export default function Header() {
 
   return (
     <nav className="fixed flex items-center justify-between p-4 bg-primary-50 dark:bg-primary-900 w-full h-16 shadow-sm z-50">
-      <div className="flex items-center">
+      <div onClick={() => router.push('/')} className="flex items-center cursor-pointer">
         <Image
           src={'/onc_logo.png'}
           width={64}
@@ -32,7 +34,13 @@ export default function Header() {
           alt="Ocean Networks Canada"
           className="h-16 w-auto mr-4 "
         />
-        <h1 className="text-2xl text-neutral-900 dark:text-neutral-50 font-bold">Astrolabe</h1>
+        <Image
+          src={'/astrolabe_logo.svg'}
+          width={64}
+          height={64}
+          alt="Astrolabe Logo"
+          className="h-16 w-auto brightness-0 saturate-100"
+        />
       </div>
       <div>
         {/* --- Dialogs --- */}
