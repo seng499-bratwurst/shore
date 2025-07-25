@@ -9,10 +9,10 @@ import {
 } from '@/components/ui/form/form';
 import { Input } from '@/components/ui/input/input';
 import { zodResolver } from '@hookform/resolvers/zod';
-import React from 'react';
+import { DefaultError } from '@tanstack/react-query';
+import React, { useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SignUpData, signUpSchema, useSignUp } from '../api/sign-up';
-import { useState } from 'react';
 
 export type SignUpFormProps = {
   onCancel?: () => void;
@@ -42,7 +42,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onCancel, onLogin, onSuccess })
         setIsError(false);
         if (onSuccess) onSuccess();
       },
-      onError: (error: any) => {
+      onError: (error: DefaultError) => {
         setIsError(true);
         setMessage(error?.message || 'Sign up failed. Please try again.');
       },
@@ -53,15 +53,13 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onCancel, onLogin, onSuccess })
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {message && (
-        <div
+          <div
             className={`text-center text-sm ${
-            isError
-                ? 'text-red-600 dark:text-red-400'
-                : 'text-green-600 dark:text-green-400'
+              isError ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
             }`}
-        >
+          >
             {message}
-        </div>
+          </div>
         )}
         <FormField
           control={form.control}

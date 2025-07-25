@@ -19,6 +19,7 @@ import {
   OnConnect,
   OnNodesChange,
   ReactFlow,
+  useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { throttle } from 'lodash';
@@ -30,15 +31,18 @@ import {
   useGetConversationMessages,
 } from '../api/get-conversation-messages';
 import { useUpdateMessage } from '../api/update-message';
+import { useGraphChatSettingsStore } from '../stores/graph-chat-settings-store';
 import { ReactFlowEdge } from '../types/edge';
+import { HandleId } from '../types/handle';
 import { Message } from '../types/message';
-import { createEdgeId, messageEdgeToReactFlowEdge } from '../util/edge';
+import { createTemporaryEdge, messageEdgeToReactFlowEdge } from '../util/edge';
 import { createSourceHandleId, createTargetHandleId, oppositeHandleSide } from '../util/handle';
+import { getLayoutedElements } from '../util/layout';
 import {
   branchedNodeCoordinates,
-  determinePromptBranchSide,
   generateTempNodeId,
   messageToNode,
+  newPromptCoordinates,
 } from '../util/node';
 import GraphControls from './graph-controls';
 
@@ -51,6 +55,7 @@ type GraphChatProps = {
 };
 
 const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }) => {
+  const { settings } = useGraphChatSettingsStore();
   const [conversationId, setConversationId] = useState(_conversationId);
   const [edges, setEdges] = useState<ReactFlowEdge[]>([]);
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -115,7 +120,6 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
   );
 
   useEffect(() => {
-    console.log('hasLoadedInitialGraph:', hasLoadedInitialGraph);
     if (hasLoadedInitialGraph) {
       console.log({ messages, messageEdges });
       setNodes([]);
@@ -139,18 +143,31 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         )
       );
     }
-  }, [hasLoadedInitialGraph]);
+  }, [hasLoadedInitialGraph, messages, messageEdges]);
+
+  // Update all edges when edge type setting changes
+  useEffect(() => {
+    if (edges.length > 0) {
+      setEdges((currentEdges) =>
+        currentEdges.map((edge) => ({
+          ...edge,
+          type: settings.edgeType === 'default' ? undefined : settings.edgeType,
+        }))
+      );
+    }
+  }, [settings.edgeType, setEdges, edges.length]);
 
   const handleNodeUpdates = useCallback(
     (changes: NodePositionChange[]) => {
       setNodes((nds) => applyNodeChanges(changes, nds));
+      const persistentChanges = changes.filter((change) => persistentMessageIds.has(change.id));
 
       // Optimisticlly update the position of messages that have been moved
       queryClient.setQueryData<Message[]>(
         createConversationMessagesQueryKey(conversationId),
         (prevNodes) => {
           if (!prevNodes) return [];
-          const updateMap = Object.fromEntries(changes.map((n) => [n.id, n.position]));
+          const updateMap = Object.fromEntries(persistentChanges.map((n) => [n.id, n.position]));
           return prevNodes.map((node) =>
             updateMap[node.id] ? { ...node, position: updateMap[node.id] } : node
           );
@@ -158,13 +175,13 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
       );
 
       // Update the latest position of each message. This will be used in the next update batch
-      changes.forEach((node) => {
+      persistentChanges.forEach((node) => {
         pendingMessagePositionUpdatesRef.current[node.id] = node;
       });
 
       throttledMessagePositionUpdate();
     },
-    [queryClient, throttledMessagePositionUpdate, conversationId, nodes]
+    [queryClient, throttledMessagePositionUpdate, conversationId, persistentMessageIds]
   );
 
   const onNodesChange: OnNodesChange = useCallback(
@@ -197,24 +214,25 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         // If the connection is valid, add the edge
         setEdges((eds) =>
           addEdge(
-            {
-              source: connection.source,
-              target: connection.target,
-              sourceHandle: connection.sourceHandle,
-              targetHandle: connection.targetHandle,
-              id: createEdgeId(connection.source, connection.target),
-            } as ReactFlowEdge,
+            createTemporaryEdge(
+              connection.source,
+              connection.target,
+              connection.sourceHandle! as HandleId,
+              connection.targetHandle! as HandleId
+            ),
             eds
           )
         );
       }
     },
-    [nodes, edges, setEdges]
+    [nodes, setEdges]
   );
+
+  const { getNode } = useReactFlow();
 
   const onBranchResponse: OnBranchResponse = useCallback(
     ({ id, handleSide }) => {
-      const node = nodes.find((n) => n.id === id);
+      const node = getNode(id); // Get the node being branched from
       if (!node) return;
 
       const oppositeSide = oppositeHandleSide(handleSide);
@@ -245,22 +263,22 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
       // Create temporary edge to prompt node (will be replaced with actual response-prompt edge on creation)
       setEdges((eds) =>
         addEdge(
-          {
-            id: createEdgeId(node.id, tempNodeId),
-            source: node.id,
-            target: tempNodeId,
-            sourceHandle: createSourceHandleId(handleSide),
-            targetHandle: createTargetHandleId(oppositeSide),
-          },
+          createTemporaryEdge(
+            node.id,
+            tempNodeId,
+            createSourceHandleId(handleSide),
+            createTargetHandleId(oppositeSide)
+          ),
           eds
         )
       );
     },
-    [setEdges, edges, setNodes, nodes]
+    [setEdges, setNodes, getNode] // Get the node being branched from
   );
 
   const onSendPrompt: OnSendPrompt = useCallback(
-    ({ id, content }) => {
+
+    ({ id, content, position }) => {
 
       // Allow only one prompt to be submitted at a time
       if (isPromptSending) return;
@@ -281,7 +299,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
       const node = nodes.find((n) => n.id === id); // Find temporary node of the prompt being sent
       if (!node) return;
 
-      const branchSide = determinePromptBranchSide(node.position);
+      const branchSide = position;
       const responseCoordinates = branchedNodeCoordinates(node, branchSide);
 
       createPrompt.mutate(
@@ -289,10 +307,10 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
           content,
           xCoordinate: node.position.x,
           yCoordinate: node.position.y,
-          targetHandle: createTargetHandleId(branchSide),
+          targetHandle: createTargetHandleId(oppositeHandleSide(branchSide)),
           responseXCoordinate: responseCoordinates.x,
           responseYCoordinate: responseCoordinates.y,
-          sourceHandle: createSourceHandleId(oppositeHandleSide(branchSide)),
+          sourceHandle: createSourceHandleId(branchSide),
           conversationId,
           sources: edges
             .filter((edge) => edge.target === node.id)
@@ -403,13 +421,58 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         }
       );
     },
-    [nodes, createPrompt, edges, setNodes, setEdges, conversationId]
+    [nodes, createPrompt, edges, setEdges, conversationId]
   );
 
-  console.log({ nodes, edges });
+  const handleCreateNewPrompt = useCallback(() => {
+    const promptCoordinates = newPromptCoordinates(nodes);
+    setNodes((nds) =>
+      nds.concat({
+        id: `${Date.now()}`,
+        position: promptCoordinates,
+        data: {
+          isEditable: true,
+          isLoading: isPromptSending,
+        },
+        type: 'prompt',
+        draggable: true,
+      })
+    );
+  }, [setNodes, nodes]);
+
+  // Function to trigger auto-layout
+  const handleAutoLayout = useCallback(() => {
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges);
+
+    // Create NodePositionChange[] for position updates
+    const positionChanges = layoutedNodes.reduce<NodePositionChange[]>((acc, layoutedNode) => {
+      const originalNode = nodes.find((n) => n.id === layoutedNode.id);
+      if (!originalNode) return acc;
+      if (
+        originalNode.position.x !== layoutedNode.position.x ||
+        originalNode.position.y !== layoutedNode.position.y
+      ) {
+        acc.push({
+          id: layoutedNode.id,
+          type: 'position',
+          position: layoutedNode.position,
+        });
+      }
+      return acc;
+    }, []);
+
+    if (positionChanges.length > 0) {
+      handleNodeUpdates(positionChanges);
+    }
+    setEdges(layoutedEdges);
+  }, [nodes, edges, setEdges, handleNodeUpdates]);
 
   return (
-    <GraphProvider onBranchResponse={onBranchResponse} onSendPrompt={onSendPrompt}>
+    <GraphProvider
+      onBranchResponse={onBranchResponse}
+      onSendPrompt={onSendPrompt}
+      onAutoLayout={handleAutoLayout}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -424,20 +487,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         <GraphControls />
         <Button
           className="absolute top-4 left-4 z-10 flex justify-center items-center"
-          onClick={() =>
-            setNodes((nds) =>
-              nds.concat({
-                id: `${Date.now()}`,
-                position: { x: 100, y: 100 },
-                data: {
-                  isEditable: true,
-                  isLoading: isPromptSending,
-                },
-                type: 'prompt',
-                draggable: true,
-              })
-            )
-          }
+          onClick={handleCreateNewPrompt}
         >
           New Prompt
         </Button>
