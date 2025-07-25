@@ -273,13 +273,11 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         )
       );
     },
-    [setEdges, setNodes, getNode] // Get the node being branched from
+    [setEdges, setNodes, getNode, isPromptSending] // Get the node being branched from
   );
 
   const onSendPrompt: OnSendPrompt = useCallback(
-
     ({ id, content, position }) => {
-
       // Allow only one prompt to be submitted at a time
       if (isPromptSending) return;
       setIsPromptSending(true);
@@ -421,7 +419,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         }
       );
     },
-    [nodes, createPrompt, edges, setEdges, conversationId]
+    [nodes, createPrompt, edges, setEdges, conversationId, isPromptSending, setNodes]
   );
 
   const handleCreateNewPrompt = useCallback(() => {
@@ -438,7 +436,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         draggable: true,
       })
     );
-  }, [setNodes, nodes]);
+  }, [setNodes, nodes, isPromptSending]);
 
   // Function to trigger auto-layout
   const handleAutoLayout = useCallback(() => {
