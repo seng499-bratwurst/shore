@@ -43,6 +43,18 @@ const PromptNode: React.FC<NodeProps<PromptNodeType>> = (props) => {
     }
   };
 
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Prevent new line on Enter key press and send prompt instead
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      _onSendPrompt({
+        content: prompt,
+        id: props.id,
+        position: 'right',
+      });
+    }
+  };
+
   return (
     <div className="relative bg-card rounded-b-lg shadow-md flex flex-col min-w-[250px] max-w-[300px] min-h-[100px]">
       <NodeHandles settings={settings.prompt} />
@@ -54,6 +66,7 @@ const PromptNode: React.FC<NodeProps<PromptNodeType>> = (props) => {
             placeholder="Type your prompt here..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={handleKeyPress}
             disabled={props.data.isLoading}
           />
         ) : (
