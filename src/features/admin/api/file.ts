@@ -30,15 +30,15 @@ export type Document = {
   sourceLink: string;
   sourceType: string;
   uploadDate: string;
-  positiveRatings: number;
-  negativeRatings: number;
-  queries: number;
+  upVotes: number;
+  downVotes: number;
+  usages: number;
 };
 
 // API call function
 const fetchFiles = async (): Promise<File[]> => {
   const response = await api.get('files');
-  console.log('API Response! :', response);
+  console.log('API Response :', response);
   
   const parsed = z.array(fileItemSchema).parse(response);
   return parsed;

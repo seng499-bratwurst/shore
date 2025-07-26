@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs/t
 import { useDeleteFile } from '@/features/admin/api/deleteFile';
 import { Document, useFiles } from '@/features/admin/api/file';
 import { useUploadFile } from '@/features/admin/api/upload';
+import { FileMetric, useFileMetrics } from '@/features/admin/api/filemetrics';
 import { dummyTopics, Topic } from '@/features/admin/data/topicsDummyData';
 import { AxiosError } from 'axios';
 import {
@@ -39,6 +40,7 @@ import {
 
 export default function AdminPage() {
   const { data: files = [], isLoading, error, refetch } = useFiles();
+  const { data: metrics = [], isLoading: isMetricsLoading, error: metricsError } = useFileMetrics();
   const uploadFileMutation = useUploadFile();
   const deleteFileMutation = useDeleteFile();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -47,16 +49,23 @@ export default function AdminPage() {
   const [sourceType, setSourceType] = useState<string>('');  
 
   // Transform API data to match Document type for the table
-  const documents: Document[] = files.map((file) => ({
-    id: file.id,
-    name: file.name,
-    uploadDate: new Date(file.createdAt).toLocaleDateString(),
-    sourceLink: file.sourceLink || "",
-    sourceType: file.sourceType || "",
-    positiveRatings: 0, // Placeholder: Update with actual data if available
-    negativeRatings: 0, // Placeholder: Update with actual data if available
-    queries: 0, // Placeholder: Update with actual data if available
-  }));
+  const documents: Document[] = files.map((file) => {
+    const fileMetric = metrics.find((metric) => metric.fileId === file.id) || {
+      upVotes: 0,
+      downVotes: 0,
+      usages: 0,
+    };
+    return {
+      id: file.id,
+      name: file.name,
+      uploadDate: new Date(file.createdAt).toLocaleDateString(),
+      sourceLink: file.sourceLink || '',
+      sourceType: file.sourceType || '',
+      upVotes: fileMetric.upVotes,
+      downVotes: fileMetric.downVotes,
+      usages: fileMetric.usages,
+    };
+  });
 
    // Dummy Data (For Topics Table)
   const topics: Topic[] = dummyTopics;
@@ -109,7 +118,7 @@ export default function AdminPage() {
     });
   };
 
-  if (isLoading) {
+  if (isLoading || isMetricsLoading) {
     return <div className="px-14">Loading...</div>;
   }
 
@@ -171,18 +180,18 @@ export default function AdminPage() {
                     <TableCell className="text-center">{doc.sourceType}</TableCell>
                     <TableCell
                       className={`text-center ${
-                        doc.positiveRatings / (doc.positiveRatings + doc.negativeRatings) < 0.5
+                        doc.upVotes / (doc.upVotes + doc.downVotes) < 0.5
                           ? 'text-red-600'
                           : 'text-green-600'
                       }`}
                     >
                       {(
-                        (100 * doc.positiveRatings) / (doc.positiveRatings + doc.negativeRatings) ||
+                        (100 * doc.upVotes) / (doc.downVotes + doc.downVotes) ||
                         0
                       ).toFixed(2)}
                       %
                     </TableCell>
-                    <TableCell className="text-center">{doc.queries}</TableCell>
+                    <TableCell className="text-center">{doc.usages}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
