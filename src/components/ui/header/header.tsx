@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { Button } from '../button/button';
 import AstrolabeLogo from './astrolabe-logo';
 
@@ -43,13 +42,7 @@ export default function Header() {
           alt="Ocean Networks Canada"
           className="h-16 w-auto mr-4 "
         />
-        <Image
-          src={'/astrolabe_logo.svg'}
-          width={64}
-          height={64}
-          alt="Astrolabe Logo"
-          className="h-16 w-auto brightness-0 saturate-100"
-        />
+        <AstrolabeLogo />
       </div>
       <div>
         {/* --- Dialogs --- */}
