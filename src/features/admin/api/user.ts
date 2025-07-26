@@ -1,6 +1,5 @@
 import { api } from '@/lib/axios';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { HttpStatusCode } from 'axios';
 import { z } from 'zod';
 
 export const UserRoleSchema = z.enum(["User", "Admin"])

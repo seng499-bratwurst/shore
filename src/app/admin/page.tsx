@@ -313,7 +313,7 @@ const Roles = () => {
 
   const handleRoleChange = (userId: string, newRole: string) => {
     setChangedRoles((prev) => {
-      let changesWithoutUser = prev.filter((change) => change.userId !== userId);
+      const changesWithoutUser = prev.filter((change) => change.userId !== userId);
       const oldUserState = users.find((user) => user.id === userId);
       if (!oldUserState) return changesWithoutUser;
       if (oldUserState.roles.includes(UserRoleSchema.parse(newRole))) {
@@ -324,7 +324,7 @@ const Roles = () => {
   };
 
   const handleSubmitChanges = () => {
-    let userRoleUpdates = changedRoles.map(({ userId, newRole }) => ({
+    const userRoleUpdates = changedRoles.map(({ userId, newRole }) => ({
       id: userId,
       role: UserRoleSchema.parse(newRole),
     }));
@@ -336,7 +336,7 @@ const Roles = () => {
 
     updateUserRolesMutation.mutate(userRoleUpdates, {
         onSuccess: (result) => {
-            let successful = result.filter((res) => res.success).map((res) => res.userId);
+            const successful = result.filter((res) => res.success).map((res) => res.userId);
             setChangedRoles((prev) => prev.filter((change) => !successful.includes(change.userId)));
         },
         onError: (error) => {
