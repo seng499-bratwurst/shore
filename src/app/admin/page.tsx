@@ -29,6 +29,13 @@ import { Document, useFiles } from '@/features/admin/api/file';
 import { useUploadFile } from '@/features/admin/api/upload';
 import { dummyTopics, Topic } from '@/features/admin/data/topicsDummyData';
 import { AxiosError } from 'axios';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select/select';
 
 export default function AdminPage() {
   const { data: files = [], isLoading, error, refetch } = useFiles();
@@ -36,18 +43,22 @@ export default function AdminPage() {
   const deleteFileMutation = useDeleteFile();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFileIds, setSelectedFileIds] = useState<number[]>([]);
+  const [sourceLink, setSourceLink] = useState<string>('');
+  const [sourceType, setSourceType] = useState<string>('');  
 
   // Transform API data to match Document type for the table
   const documents: Document[] = files.map((file) => ({
     id: file.id,
-    name: file.fileName,
+    name: file.name,
     uploadDate: new Date(file.createdAt).toLocaleDateString(),
+    sourceLink: file.sourceLink || "",
+    sourceType: file.sourceType || "",
     positiveRatings: 0, // Placeholder: Update with actual data if available
     negativeRatings: 0, // Placeholder: Update with actual data if available
     queries: 0, // Placeholder: Update with actual data if available
   }));
 
-  // Dummy Data (For Topics Table)
+   // Dummy Data (For Topics Table)
   const topics: Topic[] = dummyTopics;
 
   // Handle file selection for upload
@@ -59,9 +70,16 @@ export default function AdminPage() {
   // Handle file upload and close dialog
   const handleUpload = () => {
     if (selectedFile) {
-      uploadFileMutation.mutate(selectedFile, {
+      const formData = new FormData();
+      formData.append('File', selectedFile);
+      formData.append('SourceLink', sourceLink);
+      formData.append('SourceType', sourceType);
+      
+      uploadFileMutation.mutate(formData, {
         onSuccess: () => {
-          setSelectedFile(null); // Reset file input
+          setSelectedFile(null);
+          setSourceLink('');
+          setSourceType('');
         },
         onError: (error) => {
           console.error('Upload error:', error.message);
@@ -106,7 +124,7 @@ export default function AdminPage() {
 
     return (
       <div className="px-14">
-        <p className="mb-4 text-red-600">{errorMessage}</p>
+        <p className="text-red-600 mb-4">{errorMessage}</p>
         <Button variant="outline" onClick={() => refetch()}>
           Try Again
         </Button>
@@ -115,7 +133,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="px-14 ">
+    <div className="px-14">
       <Tabs defaultValue="docs" className="w-full">
         <div className="flex justify-end pt-8">
           <TabsList className="dark:bg-primary-900 bg-neutral-200">
@@ -131,9 +149,11 @@ export default function AdminPage() {
                 <TableRow>
                   <TableHead className="w-[50px]"></TableHead>
                   <TableHead>Document</TableHead>
+                  <TableHead className="text-center">Source Link</TableHead>
+                  <TableHead className="text-center">Source Type</TableHead>
                   <TableHead className="text-center">Positive Rate</TableHead>
                   <TableHead className="text-center">Query Count</TableHead>
-                  <TableHead className="text-center">Upload Date</TableHead>
+                  
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -147,6 +167,8 @@ export default function AdminPage() {
                       />
                     </TableCell>
                     <TableCell>{doc.name}</TableCell>
+                    <TableCell className="text-center">{doc.sourceLink}</TableCell>
+                    <TableCell className="text-center">{doc.sourceType}</TableCell>
                     <TableCell
                       className={`text-center ${
                         doc.positiveRatings / (doc.positiveRatings + doc.negativeRatings) < 0.5
@@ -161,7 +183,6 @@ export default function AdminPage() {
                       %
                     </TableCell>
                     <TableCell className="text-center">{doc.queries}</TableCell>
-                    <TableCell className="text-center">{doc.uploadDate}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -179,34 +200,65 @@ export default function AdminPage() {
                     Select a file to upload to the document management system.
                   </DialogDescription>
                 </DialogHeader>
-                <label
-                  htmlFor="file-upload"
-                  className="border-2 border-dashed border-neutral-400 p-8 text-center mb-4 rounded cursor-pointer hover:bg-neutral-100 transition-colors"
-                >
-                  <Input
-                    id="file-upload"
-                    type="file"
-                    accept=".md,.txt,.pdf"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                  {selectedFile ? (
-                    <p className="text-sm text-neutral-800">{selectedFile.name}</p>
-                  ) : (
-                    <>
-                      <p>Choose a file or drag and drop it here</p>
-                      <p className="text-sm text-neutral-500 mt-2">
-                        MD, TXT, and PDF formats, maximum size of 50MB
-                      </p>
-                    </>
-                  )}
-                </label>
+                <div className="space-y-4">
+                  <div className="border-2 border-dashed border-neutral-400 p-8 text-center mb-4 rounded cursor-pointer hover:bg-neutral-100 transition-colors">
+                  <label htmlFor="file-upload">
+                    <Input
+                      id="file-upload"
+                      type="file"
+                      accept=".md,.txt,.pdf"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    {selectedFile ? (
+                      <p className="text-sm text-neutral-800">{selectedFile.name}</p>
+                    ) : (
+                      <>
+                        <p>Choose a file or drag and drop it here</p>
+                        <p className="text-sm text-neutral-500 mt-2">
+                          MD, TXT, and PDF formats, maximum size of 50MB
+                        </p>
+                      </>
+                    )}
+                  </label>
+                  </div>
+                  <div>
+                    <label htmlFor="source-link" className="block text-sm font-medium">
+                      Source Link
+                    </label>
+                    <Input
+                      id="source-link"
+                      type="text"
+                      value={sourceLink}
+                      onChange={(e) => setSourceLink(e.target.value)}
+                      placeholder="Enter source link"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="source-type" className="block text-sm font-medium">
+                      Source Type
+                    </label>
+                    <Select value={sourceType} onValueChange={setSourceType}>
+                      <SelectTrigger id="source-type" className="mt-1">
+                        <SelectValue placeholder="Select source type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cambridge_bay_papers">Cambridge Bay Papers</SelectItem>
+                        <SelectItem value="cambridge_bay_web_articles">
+                          Cambridge Bay Web Articles
+                        </SelectItem>
+                        <SelectItem value="confluence_json">Confluence JSON</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <DialogFooter>
                   <DialogClose asChild>
                     <Button
                       type="button"
                       onClick={handleUpload}
-                      disabled={!selectedFile || uploadFileMutation.isPending}
+                      disabled={!selectedFile || !sourceType || uploadFileMutation.isPending}
                     >
                       {uploadFileMutation.isPending ? 'Uploading...' : 'Upload'}
                     </Button>
@@ -241,8 +293,7 @@ export default function AdminPage() {
                     <TableCell>{topic.name}</TableCell>
                     <TableCell
                       className={`text-center ${
-                        topic.positiveRatings / (topic.positiveRatings + topic.negativeRatings) <
-                        0.5
+                        topic.positiveRatings / (topic.positiveRatings + topic.negativeRatings) < 0.5
                           ? 'text-red-600'
                           : 'text-green-600'
                       }`}

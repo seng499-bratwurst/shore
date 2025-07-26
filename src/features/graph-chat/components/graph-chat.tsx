@@ -1,6 +1,7 @@
 'use client';
 import '@/app/globals.css';
 import { Button } from '@/components/ui/button/button';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { PromptNode } from '@/features/graph-chat/components/prompt-node';
 import { ResponseNode } from '@/features/graph-chat/components/response-node';
 import {
@@ -60,6 +61,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
   const [edges, setEdges] = useState<ReactFlowEdge[]>([]);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [isPromptSending, setIsPromptSending] = useState(false);
+  const { isLoggedIn } = useAuthStore();
 
   const queryClient = useQueryClient();
   const pendingMessagePositionUpdatesRef = useRef<Record<string, NodePositionChange>>({});
@@ -67,14 +69,14 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
   const { data: messageEdges, isFetched: edgesAreFetched } = useGetConversationEdges(
     conversationId || 0,
     {
-      enabled: !!conversationId,
+      enabled: !!conversationId && isLoggedIn,
     }
   );
 
   const { data: messages, isFetched: messagesAreFetched } = useGetConversationMessages(
     conversationId || 0,
     {
-      enabled: !!conversationId,
+      enabled: !!conversationId && isLoggedIn,
     }
   );
 
@@ -89,7 +91,6 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
       () => {
         const updates = { ...pendingMessagePositionUpdatesRef.current };
         pendingMessagePositionUpdatesRef.current = {};
-
         Object.entries(updates).forEach(([id, { position }]) => {
           if (!position) return;
           updateMessage.mutate({
@@ -179,9 +180,9 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         pendingMessagePositionUpdatesRef.current[node.id] = node;
       });
 
-      throttledMessagePositionUpdate();
+      if (isLoggedIn) throttledMessagePositionUpdate();
     },
-    [queryClient, throttledMessagePositionUpdate, conversationId, persistentMessageIds]
+    [queryClient, throttledMessagePositionUpdate, conversationId, persistentMessageIds, isLoggedIn]
   );
 
   const onNodesChange: OnNodesChange = useCallback(
