@@ -55,7 +55,7 @@ export default function AdminPage() {
   const [searchedTopics, setSearchedTopics] = useState<TopicMetric[]>([]);
 
   // Default topics for metrics fetching
-  const defaultTopics = ['location', 'pH', 'conductivity','temperature', 'turbidity'];
+  const defaultTopics = ['location', 'pH', 'conductivity','temperature', 'turbidity', 'pressure', 'CO2'];
 
   // Fetch default topic metrics using the API
   const { data: defaultTopicMetrics = [], isLoading: isTopicsLoading, error: topicsError, refetch: refetchTopics } = useQuery<TopicMetric[], Error>({
