@@ -10,22 +10,50 @@ const fileMetricSchema = z.object({
   usages: z.number(),
 });
 
-// Define the API response schema
-const fileMetricsResponseSchema = z.object({
-  success: z.boolean(),
-  error: z.string().nullable(),
-  data: z.array(fileMetricSchema),
+// Define the individual topic metric schema
+const topicMetricSchema = z.object({
+  topic: z.string(),
+  fileUpVotes: z.number(),
+  fileDownVotes: z.number(),
+  queryCount: z.number(),
 });
 
-// Define the FileMetric type
 export type FileMetric = z.infer<typeof fileMetricSchema>;
+export type TopicMetric = z.infer<typeof topicMetricSchema>;
 
 // API call function to fetch file metrics
-const fetchFileMetrics = async (): Promise<FileMetric[]> => {
+export const fetchFileMetrics = async (): Promise<FileMetric[]> => {
   const response = await api.get('metrics');
   const parsed = z.array(fileMetricSchema).parse(response);
-  console.log('Metrics Response', parsed);
+  console.log('Metrics:', parsed);
   return parsed;
+};
+
+// API call function to fetch topic metrics
+export const fetchTopicMetrics = async (search: string): Promise<TopicMetric> => {
+  if (!search) {
+    throw new Error('Search term cannot be empty');
+  }
+  const response = await api.get(`metrics/topic?search=${encodeURIComponent(search)}`);
+  const parsed = (topicMetricSchema).parse(response);
+  console.log("Topics:", parsed)
+
+  return parsed;
+};
+
+// Helper function to fetch multiple topic metrics
+export const fetchMultipleTopicMetrics = async (topics: string[]): Promise<TopicMetric[]> => {
+  const results = await Promise.all(
+    topics.map(async (topic) => {
+      try {
+        return await fetchTopicMetrics(topic);
+      } catch (error) {
+        console.error(`Error fetching metrics for topic "${topic}":`, error);
+        return { topic, fileUpVotes: 0, fileDownVotes: 0, queryCount: 0 };
+      }
+    })
+  );
+  return results;
 };
 
 // Hook to fetch file metrics
