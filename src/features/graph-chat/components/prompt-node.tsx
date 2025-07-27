@@ -59,7 +59,7 @@ const PromptNode: React.FC<NodeProps<PromptNodeType>> = (props) => {
     <div className="relative bg-card rounded-b-lg shadow-md flex flex-col min-w-[250px] max-w-[300px] min-h-[100px]">
       <NodeHandles settings={settings.prompt} />
       <div className="bg-primary text-primary-foreground w-full text-sm px-sm py-xs">Prompt</div>
-      <div className="bg-card p-xs">
+      <div className="bg-card p-xs pointer-events-auto">
         {props.data.isEditable ? (
           <Textarea
             className="flex-1 px-sm py-2xs text-sm !bg-card border-none focus:ring-0 resize-none"
@@ -70,7 +70,9 @@ const PromptNode: React.FC<NodeProps<PromptNodeType>> = (props) => {
             disabled={props.data.isLoading}
           />
         ) : (
-          props.data.content
+          <div className="select-text px-sm py-2xs text-sm pointer-events-auto">
+            {props.data.content}
+          </div>
         )}
       </div>
       {props.data.isEditable && prompt.length > 0 && (

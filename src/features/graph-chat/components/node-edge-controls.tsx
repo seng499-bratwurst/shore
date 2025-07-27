@@ -22,7 +22,6 @@ export const BaseNodeActions: React.FC<BaseNodeActionsProps> = ({
   buttonVariant = 'default',
 }) => {
   const [hoveredQuarter, setHoveredQuarter] = React.useState<HandleSide | null>(null);
-  const containerRef = React.useRef<HTMLDivElement>(null);
 
   // Use the provided enabledSides directly
   const activeSides = enabledSides;
@@ -32,45 +31,18 @@ export const BaseNodeActions: React.FC<BaseNodeActionsProps> = ({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // The container extends 120px around the node, so the actual node is in the center
-    const nodeLeft = 120;
-    const nodeRight = rect.width - 120;
-    const nodeTop = 120;
-    const nodeBottom = rect.height - 120;
+    // Get the parent container (the node) to calculate relative position
+    const nodeRect = e.currentTarget.parentElement?.getBoundingClientRect();
+    if (!nodeRect) return;
 
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
+    const nodeX = e.clientX - nodeRect.left;
+    const nodeY = e.clientY - nodeRect.top;
+    const centerX = nodeRect.width / 2;
+    const centerY = nodeRect.height / 2;
 
-    // Calculate distance from node edges
-    let distanceFromNode = 0;
-
-    if (x < nodeLeft) {
-      // Left side
-      distanceFromNode = nodeLeft - x;
-    } else if (x > nodeRight) {
-      // Right side
-      distanceFromNode = x - nodeRight;
-    }
-
-    if (y < nodeTop) {
-      // Top side
-      const topDistance = nodeTop - y;
-      distanceFromNode = Math.max(distanceFromNode, topDistance);
-    } else if (y > nodeBottom) {
-      // Bottom side
-      const bottomDistance = y - nodeBottom;
-      distanceFromNode = Math.max(distanceFromNode, bottomDistance);
-    }
-
-    // If mouse is more than 120px from node edge, hide buttons
-    if (distanceFromNode > 120) {
-      setHoveredQuarter(null);
-      return;
-    }
-
-    // Determine which diagonal quarter the mouse is in relative to center
-    const relativeX = x - centerX;
-    const relativeY = y - centerY;
+    // Determine which quarter based on position relative to node center
+    const relativeX = nodeX - centerX;
+    const relativeY = nodeY - centerY;
 
     if (Math.abs(relativeX) > Math.abs(relativeY)) {
       // Horizontal quarters
@@ -82,16 +54,8 @@ export const BaseNodeActions: React.FC<BaseNodeActionsProps> = ({
   };
 
   const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only hide if mouse is actually leaving the entire container area
-    const relatedTarget = e.relatedTarget;
-    if (
-      containerRef.current &&
-      (!relatedTarget ||
-        !(relatedTarget instanceof Node) ||
-        !containerRef.current.contains(relatedTarget))
-    ) {
-      setHoveredQuarter(null);
-    }
+    // Hide the controls when leaving any hover area
+    setHoveredQuarter(null);
   };
 
   const getIconRotation = (side: HandleSide) => {
@@ -110,22 +74,51 @@ export const BaseNodeActions: React.FC<BaseNodeActionsProps> = ({
   };
 
   return (
-    <div ref={containerRef} className="absolute inset-0 -m-[120px]">
-      {/* Hitbox area extending up to 120px around the node */}
-      <div
-        className="absolute inset-0 cursor-pointer"
+    <>
+      {/* Only create hover detection areas OUTSIDE the content zone */}
+      
+      {/* Top hover area */}
+      <div 
+        className="absolute top-0 left-0 right-0 pointer-events-auto"
+        style={{ height: '120px', top: '-120px' }}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       />
-
+      
+      {/* Bottom hover area */}
+      <div 
+        className="absolute bottom-0 left-0 right-0 pointer-events-auto"
+        style={{ height: '120px', bottom: '-120px' }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      />
+      
+      {/* Left hover area */}
+      <div 
+        className="absolute top-0 bottom-0 left-0 pointer-events-auto"
+        style={{ width: '120px', left: '-120px' }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      />
+      
+      {/* Right hover area */}
+      <div 
+        className="absolute top-0 bottom-0 right-0 pointer-events-auto"
+        style={{ width: '120px', right: '-120px' }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      />
+      
+      {/* Action buttons positioned absolutely and isolated from content */}
       {/* Top action button */}
       {activeSides.top && (
         <div
-          className={`absolute top-[70px] left-1/2 transform -translate-x-1/2 flex items-center justify-center transition-all duration-300 ease-out ${
+          className={`absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center transition-all duration-300 ease-out pointer-events-auto z-20 ${
             hoveredQuarter === 'top'
               ? 'opacity-100 scale-100 translate-y-0'
               : 'opacity-0 scale-75 translate-y-4'
           }`}
+          style={{ top: '-60px' }}
           onClick={() => onAction('top')}
           onMouseEnter={() => setHoveredQuarter('top')}
         >
@@ -144,11 +137,12 @@ export const BaseNodeActions: React.FC<BaseNodeActionsProps> = ({
       {/* Right action button */}
       {activeSides.right && (
         <div
-          className={`absolute right-[70px] top-1/2 transform -translate-y-1/2 flex items-center justify-center transition-all duration-300 ease-out ${
+          className={`absolute top-1/2 transform -translate-y-1/2 flex items-center justify-center transition-all duration-300 ease-out pointer-events-auto z-20 ${
             hoveredQuarter === 'right'
               ? 'opacity-100 scale-100 translate-x-0'
               : 'opacity-0 scale-75 -translate-x-4'
           }`}
+          style={{ right: '-60px' }}
           onClick={() => onAction('right')}
           onMouseEnter={() => setHoveredQuarter('right')}
         >
@@ -167,11 +161,12 @@ export const BaseNodeActions: React.FC<BaseNodeActionsProps> = ({
       {/* Bottom action button */}
       {activeSides.bottom && (
         <div
-          className={`absolute bottom-[70px] left-1/2 transform -translate-x-1/2 flex items-center justify-center transition-all duration-300 ease-out ${
+          className={`absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center transition-all duration-300 ease-out pointer-events-auto z-20 ${
             hoveredQuarter === 'bottom'
               ? 'opacity-100 scale-100 translate-y-0'
               : 'opacity-0 scale-75 -translate-y-4'
           }`}
+          style={{ bottom: '-60px' }}
           onClick={() => onAction('bottom')}
           onMouseEnter={() => setHoveredQuarter('bottom')}
         >
@@ -190,11 +185,12 @@ export const BaseNodeActions: React.FC<BaseNodeActionsProps> = ({
       {/* Left action button */}
       {activeSides.left && (
         <div
-          className={`absolute left-[70px] top-1/2 transform -translate-y-1/2 flex items-center justify-center transition-all duration-300 ease-out ${
+          className={`absolute top-1/2 transform -translate-y-1/2 flex items-center justify-center transition-all duration-300 ease-out pointer-events-auto z-20 ${
             hoveredQuarter === 'left'
               ? 'opacity-100 scale-100 translate-x-0'
               : 'opacity-0 scale-75 translate-x-4'
           }`}
+          style={{ left: '-60px' }}
           onClick={() => onAction('left')}
           onMouseEnter={() => setHoveredQuarter('left')}
         >
@@ -209,6 +205,6 @@ export const BaseNodeActions: React.FC<BaseNodeActionsProps> = ({
           </Button>
         </div>
       )}
-    </div>
+    </>
   );
 };
