@@ -364,7 +364,7 @@ export default function AdminPage() {
           <TabsContent value="topics">
             <div className="shadow rounded p-6">
               <h2 className="text-xl font-semibold mb-4">Topics</h2>
-              <div className="flex flex-row gap-6">
+              <div className="flex flex-row gap-12">
                 <div className="flex-shrink-0 w-[300px]">
                   <div className="mb-4">
                     <h4 className="text-m font-medium mb-2">Search Topics</h4>
