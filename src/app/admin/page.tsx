@@ -21,13 +21,12 @@ import {
   TableRow,
 } from '@/components/ui/table/table';
 import { useState } from 'react';
-
 import { Input } from '@/components/ui/input/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs/tabs';
 import { useDeleteFile } from '@/features/admin/api/deleteFile';
 import { Document, useFiles } from '@/features/admin/api/file';
 import { useUploadFile } from '@/features/admin/api/upload';
-import { dummyTopics, Topic } from '@/features/admin/data/topicsDummyData';
+import { useFileMetrics, TopicMetric, fetchMultipleTopicMetrics, fetchTopicMetrics } from '@/features/admin/api/filemetrics';
 import { AxiosError } from 'axios';
 import {
   Select,
@@ -36,10 +35,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select/select';
-import { useUserList , useUpdateUserRoles, UserRoleSchema } from '@/features/admin/api/user';
+import { useQuery } from '@tanstack/react-query';
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
+import { ScrollArea } from '@/components/ui/scroll-area/scroll-area';
+import { useUserList, useUpdateUserRoles, UserRoleSchema } from '@/features/admin/api/user';
+
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 const Documents = () => {
-  const { data: files = [], isLoading, error, refetch } = useFiles();
+  const { data: files = [], isLoading: isFilesLoading, error: filesError, refetch: refetchFiles } = useFiles();
+  const { data: metrics = [], isLoading: isMetricsLoading, error: metricsError, refetch: refetchMetrics } = useFileMetrics();
   const uploadFileMutation = useUploadFile();
   const deleteFileMutation = useDeleteFile();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -47,24 +53,29 @@ const Documents = () => {
   const [sourceLink, setSourceLink] = useState<string>('');
   const [sourceType, setSourceType] = useState<string>('');
 
-  // Transform API data to match Document type for the table
-  const documents: Document[] = files.map((file) => ({
-    id: file.id,
-    name: file.name,
-    uploadDate: new Date(file.createdAt).toLocaleDateString(),
-    sourceLink: file.sourceLink || '',
-    sourceType: file.sourceType || '',
-    positiveRatings: 0, // Placeholder: Update with actual data if available
-    negativeRatings: 0, // Placeholder: Update with actual data if available
-    queries: 0, // Placeholder: Update with actual data if available
-  }));
+  const documents: Document[] = files.map((file) => {
+    const fileMetric = metrics.find((metric) => metric.fileId === file.id) || {
+      upVotes: 0,
+      downVotes: 0,
+      usages: 0,
+    };
+    return {
+      id: file.id,
+      name: file.name,
+      uploadDate: new Date(file.createdAt).toLocaleDateString(),
+      sourceLink: file.sourceLink || '',
+      sourceType: file.sourceType || '',
+      upVotes: fileMetric.upVotes,
+      downVotes: fileMetric.downVotes,
+      usages: fileMetric.usages,
+    };
+  });
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
     setSelectedFile(file);
   };
 
-  // Handle file upload and close dialog
   const handleUpload = () => {
     if (selectedFile) {
       const formData = new FormData();
@@ -77,6 +88,7 @@ const Documents = () => {
           setSelectedFile(null);
           setSourceLink('');
           setSourceType('');
+          refetchFiles();
         },
         onError: (error) => {
           console.error('Upload error:', error.message);
@@ -85,19 +97,18 @@ const Documents = () => {
     }
   };
 
-  // Handle checkbox toggle for file selection
   const handleCheckboxChange = (fileId: number, checked: boolean) => {
     setSelectedFileIds((prev) =>
       checked ? [...prev, fileId] : prev.filter((id) => id !== fileId)
     );
   };
 
-  // Handle delete button click
   const handleDelete = () => {
     selectedFileIds.forEach((fileId) => {
       deleteFileMutation.mutate(fileId, {
         onSuccess: () => {
           setSelectedFileIds((prev) => prev.filter((id) => id !== fileId));
+          refetchFiles();
         },
         onError: (error) => {
           console.error('Delete error:', error.message);
@@ -106,21 +117,25 @@ const Documents = () => {
     });
   };
 
-  if (isLoading) {
+  if (isFilesLoading || isMetricsLoading) {
     return <div className="px-14">Loading...</div>;
   }
 
-  if (error) {
-    let errorMessage = 'Error loading documents: ' + error.message;
-
-    if ([401, 403].includes((error as AxiosError)?.response?.status || 0)) {
-      errorMessage = 'You must be logged in as an admin user to view the document list.';
+  if (filesError || metricsError) {
+    let errorMessage = 'Error loading documents';
+    if (filesError) {
+      errorMessage = 'Error loading files: ' + filesError.message;
+      if ([401, 403].includes((filesError as AxiosError)?.response?.status || 0)) {
+        errorMessage = 'You must be logged in as an admin user to view the document list.';
+      }
+    } else if (metricsError) {
+      errorMessage = 'Error loading metrics: ' + metricsError.message;
     }
 
     return (
       <div className="px-14">
         <p className="text-red-600 mb-4">{errorMessage}</p>
-        <Button variant="outline" onClick={() => refetch()}>
+        <Button variant="outline" onClick={() => { refetchFiles(); refetchMetrics(); }}>
           Try Again
         </Button>
       </div>
@@ -129,179 +144,267 @@ const Documents = () => {
 
   return (
     <>
-        <div className="shadow rounded p-6 overflow-y-auto">
+      <div className="shadow rounded p-6 overflow-y-auto">
         <h2 className="text-xl font-semibold mb-2">Document Management</h2>
         <Table>
-            <TableHeader>
+          <TableHeader>
             <TableRow>
-                <TableHead className="w-[50px]"></TableHead>
-                <TableHead>Document</TableHead>
-                <TableHead className="text-center">Source Link</TableHead>
-                <TableHead className="text-center">Source Type</TableHead>
-                <TableHead className="text-center">Positive Rate</TableHead>
-                <TableHead className="text-center">Query Count</TableHead>
-                    
+              <TableHead className="w-[50px]"></TableHead>
+              <TableHead>Document</TableHead>
+              <TableHead className="text-center">Source Type</TableHead>
+              <TableHead className="text-center">Positive Rate</TableHead>
+              <TableHead className="text-center">Query Count</TableHead>
             </TableRow>
-            </TableHeader>
-            <TableBody>
+          </TableHeader>
+          <TableBody>
             {documents.map((doc) => (
-                <TableRow key={doc.id}>
+              <TableRow key={doc.id}>
                 <TableCell>
-                    <Checkbox
+                  <Checkbox
                     className="border border-black"
                     checked={selectedFileIds.includes(doc.id)}
                     onCheckedChange={(checked) => handleCheckboxChange(doc.id, !!checked)}
-                    />
+                  />
                 </TableCell>
-                <TableCell>{doc.name}</TableCell>
-                <TableCell className="text-center">{doc.sourceLink}</TableCell>
+                <TableCell>
+                  {doc.sourceLink ? (
+                    <a
+                      href={doc.sourceLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {doc.name}
+                    </a>
+                  ) : (
+                    doc.name
+                  )}
+                </TableCell>
                 <TableCell className="text-center">{doc.sourceType}</TableCell>
                 <TableCell
-                    className={`text-center ${
-                    doc.positiveRatings / (doc.positiveRatings + doc.negativeRatings) < 0.5
-                        ? 'text-red-600'
-                        : 'text-green-600'
-                    }`}
+                  className={`text-center ${
+                    doc.upVotes / (doc.usages || 1) < 0.5 ? 'text-red-600' : 'text-green-600'
+                  }`}
                 >
-                    {(
-                            (100 * doc.positiveRatings) / (doc.positiveRatings + doc.negativeRatings) ||
-                            0
-                    ).toFixed(2)}
-                    %
+                  {((100 * doc.upVotes) / (doc.usages || 1)).toFixed(2)}%
                 </TableCell>
-                <TableCell className="text-center">{doc.queries}</TableCell>
-                </TableRow>
+                <TableCell className="text-center">{doc.usages}</TableCell>
+              </TableRow>
             ))}
-            </TableBody>
+          </TableBody>
         </Table>
-        </div>
-        <div className="flex justify-end mt-4 space-x-2 dark:text-neutral-50">
-            <Dialog>
-            <DialogTrigger asChild>
-                <Button variant="outline">Upload</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                <DialogTitle>Upload Files</DialogTitle>
-                <DialogDescription>
-                    Select a file to upload to the document management system.
-                </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                <div className="border-2 border-dashed border-neutral-400 p-8 text-center mb-4 rounded cursor-pointer hover:bg-neutral-100 transition-colors">
-                    <label htmlFor="file-upload">
-                    <Input
-                        id="file-upload"
-                        type="file"
-                        accept=".md,.txt,.pdf"
-                        onChange={handleFileChange}
-                        className="hidden"
-                    />
-                    {selectedFile ? (
-                        <p className="text-sm text-neutral-800">{selectedFile.name}</p>
-                    ) : (
-                        <>
-                        <p>Choose a file or drag and drop it here</p>
-                        <p className="text-sm text-neutral-500 mt-2">
-                            MD, TXT, and PDF formats, maximum size of 50MB
-                        </p>
-                        </>
-                    )}
-                    </label>
-                </div>
-                <div>
-                    <label htmlFor="source-link" className="block text-sm font-medium">
-                    Source Link
-                    </label>
-                    <Input
-                    id="source-link"
-                    type="text"
-                    value={sourceLink}
-                    onChange={(e) => setSourceLink(e.target.value)}
-                    placeholder="Enter source link"
-                    className="mt-1"
-                    />
-                </div>
-                <div>
-                    <label htmlFor="source-type" className="block text-sm font-medium">
-                    Source Type
-                    </label>
-                    <Select value={sourceType} onValueChange={setSourceType}>
-                    <SelectTrigger id="source-type" className="mt-1">
-                        <SelectValue placeholder="Select source type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="cambridge_bay_papers">Cambridge Bay Papers</SelectItem>
-                        <SelectItem value="cambridge_bay_web_articles">
-                        Cambridge Bay Web Articles
-                        </SelectItem>
-                        <SelectItem value="confluence_json">Confluence JSON</SelectItem>
-                    </SelectContent>
-                    </Select>
-                </div>
-                </div>
-                <DialogFooter>
-                <DialogClose asChild>
-                    <Button
-                    type="button"
-                    onClick={handleUpload}
-                    disabled={!selectedFile || !sourceType || uploadFileMutation.isPending}
-                    >
-                    {uploadFileMutation.isPending ? 'Uploading...' : 'Upload'}
-                    </Button>
-                </DialogClose>
-                </DialogFooter>
-            </DialogContent>
-            </Dialog>
-            <Button
-            variant="outline"
-            disabled={selectedFileIds.length === 0 || deleteFileMutation.isPending}
-            onClick={handleDelete}
-            className="px-4"
-            >
-            {deleteFileMutation.isPending ? 'Deleting...' : 'Delete'}
-            </Button>
-        </div>
+      </div>
+      <div className="flex justify-end mt-4 space-x-2 dark:text-neutral-50">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline">Upload</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Upload Files</DialogTitle>
+              <DialogDescription>
+                Select a file to upload to the document management system.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="border-2 border-dashed border-neutral-400 p-8 text-center mb-4 rounded cursor-pointer hover:bg-neutral-100 transition-colors">
+                <label htmlFor="file-upload">
+                  <Input
+                    id="file-upload"
+                    type="file"
+                    accept=".md,.txt,.pdf"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  {selectedFile ? (
+                    <p className="text-sm text-neutral-800">{selectedFile.name}</p>
+                  ) : (
+                    <>
+                      <p>Choose a file or drag and drop it here</p>
+                      <p className="text-sm text-neutral-500 mt-2">
+                        MD, TXT, and PDF formats, maximum size of 50MB
+                      </p>
+                    </>
+                  )}
+                </label>
+              </div>
+              <div>
+                <label htmlFor="source-link" className="block text-sm font-medium">
+                  Source Link
+                </label>
+                <Input
+                  id="source-link"
+                  type="text"
+                  value={sourceLink}
+                  onChange={(e) => setSourceLink(e.target.value)}
+                  placeholder="Enter source link"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label htmlFor="source-type" className="block text-sm font-medium">
+                  Source Type
+                </label>
+                <Select value={sourceType} onValueChange={setSourceType}>
+                  <SelectTrigger id="source-type" className="mt-1">
+                    <SelectValue placeholder="Select source type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cambridge_bay_papers">Cambridge Bay Papers</SelectItem>
+                    <SelectItem value="cambridge_bay_web_articles">
+                      Cambridge Bay Web Articles
+                    </SelectItem>
+                    <SelectItem value="confluence_json">Confluence JSON</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button
+                  type="button"
+                  onClick={handleUpload}
+                  disabled={!selectedFile || !sourceType || uploadFileMutation.isPending}
+                >
+                  {uploadFileMutation.isPending ? 'Uploading...' : 'Upload'}
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Button
+          variant="outline"
+          disabled={selectedFileIds.length === 0 || deleteFileMutation.isPending}
+          onClick={handleDelete}
+          className="px-4"
+        >
+          {deleteFileMutation.isPending ? 'Deleting...' : 'Delete'}
+        </Button>
+      </div>
     </>
   );
 };
 
 const Topics = () => {
-  const topics: Topic[] = dummyTopics; // Assuming dummyTopics is fetched or managed elsewhere.
+  const [topicSearch, setTopicSearch] = useState<string>('');
+  const [searchedTopics, setSearchedTopics] = useState<TopicMetric[]>([]);
+  const defaultTopics = ['location', 'pH', 'conductivity', 'temperature', 'turbidity', 'pressure', 'CO2'];
+
+  const { data: defaultTopicMetrics = [], isLoading: isTopicsLoading, error: topicsError, refetch: refetchTopics } = useQuery<TopicMetric[], Error>({
+    queryKey: ['topicMetrics', defaultTopics],
+    queryFn: () => fetchMultipleTopicMetrics(defaultTopics),
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
+    staleTime: 0,
+  });
+
+  const topics = [...searchedTopics, ...defaultTopicMetrics];
+
+  const handleTopicSearch = async () => {
+    if (!topicSearch) return;
+    try {
+      const result = await fetchTopicMetrics(topicSearch);
+      setSearchedTopics((prev) => {
+        const existing = prev.find((t) => t.topic === result.topic);
+        if (existing) return prev;
+        return [result, ...prev];
+      });
+      setTopicSearch('');
+    } catch (error) {
+      console.error('Error searching topic:', error);
+    }
+  };
+
+  const barChartData = {
+    labels: topics.map((topic) => topic.topic),
+    datasets: [
+      {
+        label: 'Query Count',
+        data: topics.map((topic) => topic.queryCount),
+        backgroundColor: '#a045ce',
+      },
+    ],
+  };
+
+  if (isTopicsLoading) {
+    return <div className="px-14">Loading...</div>;
+  }
+
+  if (topicsError) {
+    return (
+      <div className="px-14">
+        <p className="text-red-600 mb-4">Error loading topic metrics: {topicsError.message}</p>
+        <Button variant="outline" onClick={() => refetchTopics()}>
+          Try Again
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="shadow rounded p-6 overflow-y-auto">
-      <h2 className="text-xl font-semibold mb-2">Topics</h2>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Topic</TableHead>
-            <TableHead className="text-center">Positive Rate</TableHead>
-            <TableHead className="text-center">Query Count</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {topics.map((topic) => (
-            <TableRow key={topic.id}>
-              <TableCell>{topic.name}</TableCell>
-              <TableCell
-                className={`text-center ${
-                  topic.positiveRatings / (topic.positiveRatings + topic.negativeRatings) < 0.5
-                    ? 'text-red-600'
-                    : 'text-green-600'
-                }`}
-              >
-                {(
-                  (100 * topic.positiveRatings) / (topic.positiveRatings + topic.negativeRatings) ||
-                  0
-                ).toFixed(2)}
-                %
-              </TableCell>
-              <TableCell className="text-center">{topic.queries}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div className="shadow rounded p-6">
+      <h2 className="text-xl font-semibold mb-4">Topics</h2>
+      <div className="flex flex-row gap-12">
+        <div className="flex-shrink-0 w-[300px]">
+          <div className="mb-4">
+            <h4 className="text-m font-medium mb-2">Search Topics</h4>
+            <div className="flex space-x-2">
+              <Input
+                type="text"
+                value={topicSearch}
+                onChange={(e) => setTopicSearch(e.target.value)}
+                placeholder="Search for a topic"
+                className="flex-grow"
+              />
+              <Button onClick={handleTopicSearch} disabled={!topicSearch}>
+                Search
+              </Button>
+            </div>
+          </div>
+          <div>
+            <h4 className="text-m font-medium mb-2 pt-6">Query Count Distribution</h4>
+            <div className="max-w-[300px] h-[200px]">
+              <Bar
+                data={barChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Query Count' } },
+                    x: { title: { display: true, text: 'Topics' } },
+                  },
+                }}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="flex-grow overflow-y-auto max-h-[350px]">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Topic</TableHead>
+                <TableHead className="text-center">Positive Rate</TableHead>
+                <TableHead className="text-center">Query Count</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {topics.map((topic) => (
+                <TableRow key={topic.topic}>
+                  <TableCell>{topic.topic}</TableCell>
+                  <TableCell
+                    className={`text-center ${
+                      topic.fileUpVotes / (topic.queryCount || 1) < 0.5 ? 'text-red-600' : 'text-green-600'
+                    }`}
+                  >
+                    {((100 * topic.fileUpVotes) / (topic.queryCount || 1)).toFixed(2)}%
+                  </TableCell>
+                  <TableCell className="text-center">{topic.queryCount}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
     </div>
   );
 };
@@ -335,18 +438,15 @@ const Roles = () => {
     }
 
     updateUserRolesMutation.mutate(userRoleUpdates, {
-        onSuccess: (result) => {
-            const successful = result.filter((res) => res.success).map((res) => res.userId);
-            setChangedRoles((prev) => prev.filter((change) => !successful.includes(change.userId)));
-        },
-        onError: (error) => {
-            // Should never be reached, but handle gracefully
-            console.error('Error updating user roles:', error);
-        },
+      onSuccess: (result) => {
+        const successful = result.filter((res) => res.success).map((res) => res.userId);
+        setChangedRoles((prev) => prev.filter((change) => !successful.includes(change.userId)));
+      },
+      onError: (error) => {
+        console.error('Error updating user roles:', error);
+      },
     });
   };
-
-  console.log('Changed Roles:', changedRoles);
 
   if (isLoading) {
     return <div className="px-14">Loading...</div>;
@@ -354,7 +454,6 @@ const Roles = () => {
 
   if (error) {
     let errorMessage = 'Error loading users: ' + error.message;
-
     if ([401, 403].includes((error as AxiosError)?.response?.status || 0)) {
       errorMessage = 'You must be logged in as an admin user to view the user list.';
     }
@@ -421,23 +520,27 @@ const Roles = () => {
 
 export default function AdminPage() {
   return (
-    <Tabs defaultValue="documents" className="w-full">
-        <div className="flex justify-end pt-8">
-        <TabsList className="dark:bg-primary-900 bg-neutral-200">
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="topics">Topics</TabsTrigger>
-            <TabsTrigger value="roles">Roles</TabsTrigger>
-        </TabsList>
-        </div>
-        <TabsContent value="documents">
-        <Documents />
-        </TabsContent>
-        <TabsContent value="topics">
-        <Topics />
-        </TabsContent>
-        <TabsContent value="roles">
-        <Roles />
-        </TabsContent>
-    </Tabs>
-    )
+    <div className="px-14">
+      <ScrollArea className="h-[calc(100vh-2rem)]">
+        <Tabs defaultValue="documents" className="w-full">
+          <div className="flex justify-end pt-8">
+            <TabsList className="dark:bg-primary-900 bg-neutral-200">
+              <TabsTrigger value="documents">Documents</TabsTrigger>
+              <TabsTrigger value="topics">Topics</TabsTrigger>
+              <TabsTrigger value="roles">Roles</TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent value="documents">
+            <Documents />
+          </TabsContent>
+          <TabsContent value="topics">
+            <Topics />
+          </TabsContent>
+          <TabsContent value="roles">
+            <Roles />
+          </TabsContent>
+        </Tabs>
+      </ScrollArea>
+    </div>
+  );
 }
