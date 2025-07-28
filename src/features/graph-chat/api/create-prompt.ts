@@ -1,3 +1,4 @@
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { listConversationsQueryKey } from '@/features/chat-history/api/list-conversations';
 import { api } from '@/lib/axios';
 import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
@@ -42,7 +43,17 @@ type CreatePromptResponse = {
 
 const createPrompt = (prompt: CreatePromptRequest) => {
   if (!prompt.conversationId) delete prompt.conversationId;
-  return api.post<CreatePromptRequest, CreatePromptResponse>('messages', prompt);
+  const isLoggedIn = useAuthStore.getState().isLoggedIn;
+  if (!isLoggedIn) {
+    const sessionalKey = useAuthStore.getState().sessionalKey;
+    if (!sessionalKey) {
+      throw new Error('Sessional key is required for guest users');
+    }
+    return api.post<CreatePromptRequest, CreatePromptResponse>('messages/guest', {
+      ...prompt,
+      sessionId: sessionalKey,
+    });
+  } else return api.post<CreatePromptRequest, CreatePromptResponse>('messages', prompt);
 };
 
 export const useCreatePrompt = (
@@ -54,11 +65,7 @@ export const useCreatePrompt = (
 ): UseMutationResult<CreatePromptResponse, unknown, CreatePromptRequest, unknown> => {
   const queryClient = useQueryClient();
 
-  const updateCache = (
-    response: CreatePromptResponse,
-    request: CreatePromptRequest,
-    _: unknown
-  ) => {
+  const updateCache = (response: CreatePromptResponse, request: CreatePromptRequest) => {
     queryClient.setQueryData<Message[]>(
       createConversationMessagesQueryKey(conversationId),
       (messages) => {

@@ -5,10 +5,13 @@ import { z } from 'zod';
 // Define the individual file schema
 const fileItemSchema = z.object({
   id: z.number(),
-  fileName: z.string(),
+  name: z.string(),
   createdAt: z.string(),
-  uploadedBy: z.string(),
+  uploadedBy: z.string().optional(),
+  sourceLink: z.string().optional(),
+  sourceType: z.string().optional(),
 });
+
 
 // Define the API response schema
 export const fileSchema = z.object({
@@ -24,6 +27,8 @@ export type File = z.infer<typeof fileItemSchema>;
 export type Document = {
   id: number;
   name: string;
+  sourceLink: string;
+  sourceType: string;
   uploadDate: string;
   positiveRatings: number;
   negativeRatings: number;
@@ -33,12 +38,10 @@ export type Document = {
 // API call function
 const fetchFiles = async (): Promise<File[]> => {
   const response = await api.get('files');
-  console.log('API Response:', response); // Keep for debugging
-  const parsed = fileSchema.parse(response);
-  if (!parsed.success) {
-    throw new Error(parsed.error || 'Failed to fetch files');
-  }
-  return parsed.data;
+  console.log('API Response! :', response);
+  
+  const parsed = z.array(fileItemSchema).parse(response);
+  return parsed;
 };
 
 // Hook to fetch files
