@@ -52,12 +52,29 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
 
   // Function to automatically convert URLs to markdown links
   const preprocessContent = (content: string): string => {
-    // Regex to match URLs that are not already in markdown link format
-    const urlRegex = /(?<!\]\()(https?:\/\/[^\s\]]+)(?!\))/g;
-
-    return content.replace(urlRegex, (url) => {
-      // Clean any trailing punctuation/backticks
-      const cleanUrl = url.replace(/[`\])}]+$/, '');
+    // Only convert standalone URLs that are not already in markdown format
+    // This regex matches URLs that are:
+    // 1. Not preceded by ]( (not already in a markdown link)
+    // 2. Not inside square brackets [URL]
+    // 3. Standalone URLs on their own or preceded by whitespace
+    const urlRegex = /(?<!\]\()\b(https?:\/\/[^\s\[\]]+)(?!\))/g;
+    
+    return content.replace(urlRegex, (match, url) => {
+      // Additional safety check: ensure we're not inside a markdown link
+      const matchIndex = content.indexOf(match);
+      const beforeMatch = content.substring(0, matchIndex);
+      
+      // Check if we're inside square brackets [...]
+      const lastOpenBracket = beforeMatch.lastIndexOf('[');
+      const lastCloseBracket = beforeMatch.lastIndexOf(']');
+      
+      if (lastOpenBracket > lastCloseBracket) {
+        // We're inside square brackets, don't convert
+        return match;
+      }
+      
+      // Clean any trailing punctuation
+      const cleanUrl = url.replace(/[`\])}.,;:!?]+$/, '');
       return `[${cleanUrl}](${cleanUrl})`;
     });
   };
@@ -92,7 +109,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
       <div className="flex flex-col px-sm space-y-xs mt-xs select-text pointer-events-auto relative z-50">
         <ReactMarkdown
           components={{
-            a: ({ node, ...props }) => (
+            a: ({ ...props }) => (
               <a
                 {...props}
                 target="_blank"
