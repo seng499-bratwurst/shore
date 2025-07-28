@@ -31,6 +31,14 @@ type CreatePromptResponse = {
   createdEdges: Edge[];
   promptMessageId: number;
   response: string;
+    documents: Array<{
+    id: number;
+    name: string;
+    createdAt: string;
+    uploadedBy: string;
+    sourceLink: string;
+    sourceType: string;
+  }>; 
 };
 
 const createPrompt = (prompt: CreatePromptRequest) => {
