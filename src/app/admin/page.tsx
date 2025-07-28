@@ -53,7 +53,6 @@ const Documents = () => {
   const [sourceLink, setSourceLink] = useState<string>('');
   const [sourceType, setSourceType] = useState<string>('');
 
-  // Transform API data to match Document type for the table
   const documents: Document[] = files.map((file) => {
     const fileMetric = metrics.find((metric) => metric.fileId === file.id) || {
       upVotes: 0,
@@ -335,7 +334,7 @@ const Topics = () => {
     return (
       <div className="px-14">
         <p className="text-red-600 mb-4">Error loading topic metrics: {topicsError.message}</p>
-        <Button variant="outline" onClick={(e: React.MouseEvent<HTMLButtonElement>) => refetchTopics()}>
+        <Button variant="outline" onClick={() => refetchTopics()}>
           Try Again
         </Button>
       </div>
