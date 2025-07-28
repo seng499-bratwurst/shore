@@ -89,7 +89,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
       <div className="flex flex-col px-sm space-y-xs mt-xs select-text pointer-events-auto relative z-50">
         <ReactMarkdown
           components={{
-            a: ({ node, ...props }) => (
+            a: ({ ...props }) => (
               <a
                 {...props}
                 target="_blank"

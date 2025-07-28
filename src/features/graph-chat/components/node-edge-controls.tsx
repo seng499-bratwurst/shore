@@ -27,10 +27,6 @@ export const BaseNodeActions: React.FC<BaseNodeActionsProps> = ({
   const activeSides = enabledSides;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
     // Get the parent container (the node) to calculate relative position
     const nodeRect = e.currentTarget.parentElement?.getBoundingClientRect();
     if (!nodeRect) return;
@@ -53,7 +49,7 @@ export const BaseNodeActions: React.FC<BaseNodeActionsProps> = ({
     }
   };
 
-  const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseLeave = () => {
     // Hide the controls when leaving any hover area
     setHoveredQuarter(null);
   };
