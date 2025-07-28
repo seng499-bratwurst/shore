@@ -382,7 +382,7 @@ const Roles = () => {
         </TableHeader>
         <TableBody>
           {users.toSorted((a, b) => a.id.localeCompare(b.id)).map((user) => (
-            <TableRow key={user.id} className={changedRoles.some((change) => change.userId === user.id) ? 'bg-yellow-100 hover:bg-yellow-200' : ''}>
+            <TableRow key={user.id} className={changedRoles.some((change) => change.userId === user.id) ? 'bg-primary-100 dark:bg-primary-700 hover:bg-primary-200 dark:hover:bg-primary-600' : ''}>
               <TableCell>{user.name}</TableCell>
               <TableCell>{user.email}</TableCell>
               <TableCell>
