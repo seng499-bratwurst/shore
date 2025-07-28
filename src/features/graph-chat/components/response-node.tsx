@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button/button';
 import { type Node, type NodeProps } from '@xyflow/react';
 import React, { useState } from 'react';
-import { FiDownload, FiExternalLink, FiPlus, FiThumbsDown, FiThumbsUp } from 'react-icons/fi';
+import { FiDownload, FiPlus, FiThumbsDown, FiThumbsUp } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import { useGraphContext } from '../contexts/graph-provider';
 import { useGraphChatSettingsStore } from '../stores/graph-chat-settings-store';
