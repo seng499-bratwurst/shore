@@ -9,7 +9,11 @@ import { HandleSide } from '../types/handle';
 import { BaseNodeActions } from './node-edge-controls';
 import { NodeHandles } from './node-handles';
 
-type ResponseNodeType = Node<{ content: string }>;
+type ResponseNodeType = Node<{ 
+  content: string; 
+  isStreaming?: boolean; 
+  streamingContent?: string; 
+}>;
 
 const ResponseBranchControls: React.FC<{
   onBranchResponse: (position: HandleSide) => void;
@@ -47,7 +51,15 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
         Response
       </div>
       <div className="flex flex-col px-sm space-y-xs mt-xs">
-        <ReactMarkdown>{data.content}</ReactMarkdown>
+        <ReactMarkdown>
+          {data.isStreaming ? (data.streamingContent || '') : data.content}
+        </ReactMarkdown>
+        {data.isStreaming && (
+          <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+            <div className="animate-pulse w-2 h-2 bg-primary rounded-full"></div>
+            <span>Astrolabe is thinking...</span>
+          </div>
+        )}
         <div className="flex justify-between items-center mb-xs">
           <div className="flex">
             <Button
