@@ -27,6 +27,8 @@ type ResponseNodeType = Node<{
     sourceLink: string;
     sourceType: string;
   }>;
+  isStreaming?: boolean; 
+  streamingContent?: string; 
 }>;
 
 const ResponseBranchControls: React.FC<{
@@ -146,34 +148,40 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
               ),
             }}
           >
-            {preprocessContent(data.content)}
+            {preprocessContent(data.isStreaming ? (data.streamingContent || '') : data.content)}
           </ReactMarkdown>
         </div>
+        {data.isStreaming && (
+          <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+            <div className="animate-pulse w-2 h-2 bg-primary rounded-full"></div>
+            <span>Astrolabe is thinking...</span>
+          </div>
+        )}
         {!isExpanded && showExpansion && (
           <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-card to-transparent pointer-events-none" />
         )}
-          {showExpansion && (
-            <div className="flex justify-center mt-xs">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="text-xs"
-              >
-                {isExpanded ? (
-                  <>
-                    <FiChevronUp className="w-3 h-3 mr-1" />
-                    Show Less
-                  </>
-                ) : (
-                  <>
-                    <FiChevronDown className="w-3 h-3 mr-1" />
-                    Show More
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
+        {showExpansion && (
+          <div className="flex justify-center mt-xs">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-xs"
+            >
+              {isExpanded ? (
+                <>
+                  <FiChevronUp className="w-3 h-3 mr-1" />
+                  Show Less
+                </>
+              ) : (
+                <>
+                  <FiChevronDown className="w-3 h-3 mr-1" />
+                  Show More
+                </>
+              )}
+            </Button>
+          </div>
+        )}
         {data.documents && data.documents.length > 0 && (
           <div className="references-section mt-xs pt-xs border-t border-border z-[1000] relative">
             <div className="text-xs font-medium text-muted-foreground mb-xs">References:</div>

@@ -26,6 +26,7 @@ import '@xyflow/react/dist/style.css';
 import { throttle } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCreatePrompt } from '../api/create-prompt';
+import { useCreatePromptStreaming } from '../api/create-prompt-streaming';
 import { useGetConversationEdges } from '../api/get-conversation-edges';
 import {
   createConversationMessagesQueryKey,
@@ -48,6 +49,14 @@ import {
 import GraphControls from './graph-controls';
 
 const POSITION_UPDATE_INTERVAL = 2500; // Interval to send message position updates
+const USE_STREAMING = true; // Feature flag for streaming - ENABLED now that backend is verified
+
+// Helper function to check if an edge has valid message IDs (handles both capitalized and lowercase field names)
+const isValidEdge = (edge: { sourceMessageId?: number | string; SourceMessageId?: number | string; targetMessageId?: number | string; TargetMessageId?: number | string; }) => {
+  const sourceId = edge.sourceMessageId || edge.SourceMessageId;
+  const targetId = edge.targetMessageId || edge.TargetMessageId;
+  return sourceId != null && targetId != null && sourceId !== '' && targetId !== '';
+};
 
 const nodeTypes = { prompt: PromptNode, response: ResponseNode };
 
@@ -61,6 +70,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
   const [edges, setEdges] = useState<ReactFlowEdge[]>([]);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [isPromptSending, setIsPromptSending] = useState(false);
+  const [streamingResponseId, setStreamingResponseId] = useState<string | null>(null);
   const { isLoggedIn } = useAuthStore();
 
   const queryClient = useQueryClient();
@@ -85,6 +95,80 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
   const createPrompt = useCreatePrompt(conversationId || 0, {
     onSettled: (data) => setConversationId(data?.conversationId || 0),
   });
+
+  const createPromptStreaming = useCreatePromptStreaming(
+    conversationId || 0,
+    {
+      onChunk: (chunk: string) => {
+        // Update the streaming response node in real-time
+        setNodes((nds) =>
+          applyNodeChanges(
+            nds.map<NodeReplaceChange>((n) => {
+              if (n.id === streamingResponseId && n.type === 'response') {
+                const currentContent = n.data.streamingContent || '';
+                return {
+                  id: n.id,
+                  type: 'replace',
+                  item: { 
+                    ...n, 
+                    data: { 
+                      ...n.data, 
+                      isStreaming: true,
+                      streamingContent: currentContent + chunk 
+                    } 
+                  },
+                };
+              }
+              return {
+                id: n.id,
+                type: 'replace',
+                item: n,
+              };
+            }),
+            nds
+          )
+        );
+      },
+      onComplete: (response) => {
+        // Update the response node with final content and remove streaming state
+        setNodes((nds) =>
+          applyNodeChanges(
+            nds.map<NodeReplaceChange>((n) => {
+              if (n.id === streamingResponseId && n.type === 'response') {
+                return {
+                  id: n.id,
+                  type: 'replace',
+                  item: { 
+                    ...n, 
+                    data: { 
+                      ...n.data, 
+                      content: response.response,
+                      isStreaming: false,
+                      streamingContent: undefined 
+                    } 
+                  },
+                };
+              }
+              return {
+                id: n.id,
+                type: 'replace',
+                item: n,
+              };
+            }),
+            nds
+          )
+        );
+        setStreamingResponseId(null);
+      },
+      onError: (error) => {
+        console.error('Streaming error:', error);
+        setStreamingResponseId(null);
+      }
+    },
+    {
+      onSettled: (data) => setConversationId(data?.conversationId || 0),
+    }
+  );
 
   const throttledMessagePositionUpdate = useRef(
     throttle(
@@ -301,33 +385,337 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
       const branchSide = position;
       const responseCoordinates = branchedNodeCoordinates(node, branchSide);
 
-      createPrompt.mutate(
-        {
-          content,
-          xCoordinate: node.position.x,
-          yCoordinate: node.position.y,
-          targetHandle: createTargetHandleId(oppositeHandleSide(branchSide)),
-          responseXCoordinate: responseCoordinates.x,
-          responseYCoordinate: responseCoordinates.y,
-          sourceHandle: createSourceHandleId(branchSide),
-          conversationId,
-          sources: edges
-            .filter((edge) => edge.target === node.id)
-            .map((edge) => ({
-              sourceMessageId: parseInt(edge.source),
-              sourceHandle: edge.sourceHandle,
-              targetHandle: edge.targetHandle,
-            })),
-        },
-        {
+      const promptRequest = {
+        content,
+        xCoordinate: node.position.x,
+        yCoordinate: node.position.y,
+        targetHandle: createTargetHandleId(oppositeHandleSide(branchSide)),
+        responseXCoordinate: responseCoordinates.x,
+        responseYCoordinate: responseCoordinates.y,
+        sourceHandle: createSourceHandleId(branchSide),
+        conversationId,
+        sources: edges
+          .filter((edge) => edge.target === node.id)
+          .map((edge) => ({
+            sourceMessageId: parseInt(edge.source),
+            sourceHandle: edge.sourceHandle,
+            targetHandle: edge.targetHandle,
+          })),
+      };
+
+      if (USE_STREAMING) {
+        // Generate a temporary response node ID for streaming
+        const tempResponseId = `temp-response-${Date.now()}`;
+        setStreamingResponseId(tempResponseId);
+
+        // Immediately add a streaming response node
+        setNodes((nds) =>
+          applyNodeChanges(
+            [
+              {
+                type: 'add',
+                item: {
+                  id: tempResponseId,
+                  position: responseCoordinates,
+                  data: {
+                    content: '',
+                    isStreaming: true,
+                    streamingContent: '',
+                    oncApiQuery: '',
+                    oncApiResponse: '',
+                  },
+                  type: 'response',
+                  draggable: true,
+                },
+              },
+            ],
+            nds
+          )
+        );
+
+        // Immediately add a temporary edge from prompt to response
+        setEdges((eds) =>
+          addEdge(
+            createTemporaryEdge(
+              node.id,
+              tempResponseId,
+              createSourceHandleId(branchSide),
+              createTargetHandleId(oppositeHandleSide(branchSide))
+            ),
+            eds
+          )
+        );
+
+        createPromptStreaming.mutate(promptRequest, {
           onSettled: (data, _, variables) => {
+            console.log('Streaming settled with data:', data);
             if (data) {
-              setConversationId(data.conversationId); // Conversation ID is created on the first prompt
+              console.log('Created edges from streaming:', data.createdEdges);
+              console.log('First edge details:', data.createdEdges[0]);
+              console.log('Edge sourceHandle:', data.createdEdges[0]?.sourceHandle);
+              console.log('Edge targetHandle:', data.createdEdges[0]?.targetHandle);
+              console.log('Edge sourceMessageId:', data.createdEdges[0]?.sourceMessageId);
+              console.log('Edge targetMessageId:', data.createdEdges[0]?.targetMessageId);
+              console.log('Response promptMessageId:', data.promptMessageId);
+              console.log('Response responseMessageId:', data.responseMessageId);
+              console.log('Filtered edges:', data.createdEdges.filter(isValidEdge));
+              setConversationId(data.conversationId);
+              // Replace the temporary response node with the actual response node
               setNodes((nds) =>
                 applyNodeChanges(
                   [
                     {
-                      type: 'add', // Add the new response node
+                      type: 'replace', // Replace the temp response node
+                      id: tempResponseId,
+                      item: {
+                        id: data.responseMessageId.toString(),
+                        position: {
+                          x: variables.responseXCoordinate,
+                          y: variables.responseYCoordinate,
+                        },
+                        data: {
+                          content: data.response,
+                          isStreaming: false,
+                          oncApiQuery: '',
+                          oncApiResponse: '',
+                        },
+                        type: 'response',
+                        draggable: true,
+                      },
+                    },
+                    {
+                      type: 'replace', // Replace the temporary prompt node
+                      id: node.id,
+                      item: {
+                        id: data.promptMessageId.toString(),
+                        position: {
+                          x: variables.xCoordinate,
+                          y: variables.yCoordinate,
+                        },
+                        data: {
+                          content: variables.content,
+                          isEditable: false,
+                          isLoading: false,
+                        },
+                        type: 'prompt',
+                        draggable: true,
+                      },
+                    },
+                  ],
+                  nds
+                )
+              );
+
+              // Process edges with fallback for missing edges
+              const validEdges = data.createdEdges.filter(isValidEdge);
+              const edgeChanges: Array<EdgeAddChange<ReactFlowEdge> | EdgeRemoveChange> = [
+                // Remove the temporary edge from temp prompt to temp response
+                {
+                  type: 'remove',
+                  id: `${node.id}-${tempResponseId}`,
+                },
+              ];
+
+              if (validEdges.length > 0) {
+                // Use backend-provided edges if they exist and are valid
+                edgeChanges.push(
+                  ...validEdges.map((edge): EdgeAddChange<ReactFlowEdge> => {
+                    // Ensure we have valid message IDs (handle both naming conventions)
+                    const edgeWithCapitalizedFields = edge as typeof edge & { SourceMessageId?: number | string; TargetMessageId?: number | string };
+                    const sourceId = edge.sourceMessageId || edgeWithCapitalizedFields.SourceMessageId;
+                    const targetId = edge.targetMessageId || edgeWithCapitalizedFields.TargetMessageId;
+                    
+                    // Use handles from the original request if backend doesn't provide them
+                    const edgeWithHandles = {
+                      ...edge,
+                      sourceMessageId: Number(sourceId),
+                      targetMessageId: Number(targetId),
+                      sourceHandle: edge.sourceHandle || variables.sourceHandle,
+                      targetHandle: edge.targetHandle || variables.targetHandle,
+                    };
+                    console.log('Edge with handles:', edgeWithHandles);
+                    return {
+                      type: 'add',
+                      item: messageEdgeToReactFlowEdge(edgeWithHandles),
+                    };
+                  })
+                );
+              } else {
+                // Fallback: create a manual edge from prompt to response
+                console.log('No valid edges from backend, creating manual edge');
+                const manualEdge = {
+                  id: 0, // Temporary ID
+                  sourceMessageId: data.promptMessageId,
+                  targetMessageId: data.responseMessageId,
+                  sourceHandle: variables.sourceHandle,
+                  targetHandle: variables.targetHandle,
+                };
+                edgeChanges.push({
+                  type: 'add',
+                  item: messageEdgeToReactFlowEdge(manualEdge),
+                });
+              }
+
+              // Add existing edges that need to be removed
+              edgeChanges.push(
+                ...edges
+                  .filter((e) => e.target === node.id)
+                  .map(({ id }): EdgeRemoveChange => ({
+                    type: 'remove',
+                    id,
+                  }))
+              );
+
+              setEdges((eds) => applyEdgeChanges(edgeChanges, eds));
+            }
+            setNodes((nds) =>
+              applyNodeChanges(
+                nds.map<NodeReplaceChange>((n) => ({
+                  id: n.id,
+                  type: 'replace',
+                  item: { ...n, data: { ...n.data, isLoading: false } },
+                })),
+                nds
+              )
+            );
+            setIsPromptSending(false);
+          },
+          onError: (error) => {
+            console.error('Error creating prompt with streaming:', error);
+            
+            // Fallback to regular API if streaming fails
+            console.log('Falling back to non-streaming API...');
+            createPrompt.mutate(promptRequest, {
+              onSettled: (data, _, variables) => {
+                if (data) {
+                  setConversationId(data.conversationId);
+                  // Remove the temporary streaming response node and add the actual response
+                  setNodes((nds) =>
+                    applyNodeChanges(
+                      [
+                        {
+                          type: 'remove',
+                          id: tempResponseId,
+                        },
+                        {
+                          type: 'add',
+                          item: {
+                            id: data.responseMessageId.toString(),
+                            position: {
+                              x: variables.responseXCoordinate,
+                              y: variables.responseYCoordinate,
+                            },
+                            data: {
+                              content: data.response,
+                              oncApiQuery: '',
+                              oncApiResponse: '',
+                            },
+                            type: 'response',
+                            draggable: true,
+                          },
+                        },
+                        {
+                          type: 'replace',
+                          id: node.id,
+                          item: {
+                            id: data.promptMessageId.toString(),
+                            position: {
+                              x: variables.xCoordinate,
+                              y: variables.yCoordinate,
+                            },
+                            data: {
+                              content: variables.content,
+                              isEditable: false,
+                              isLoading: false,
+                            },
+                            type: 'prompt',
+                            draggable: true,
+                          },
+                        },
+                      ],
+                      nds
+                    )
+                  );
+
+                  setEdges((eds) =>
+                    applyEdgeChanges(
+                      [
+                        // Filter out any invalid edges before processing
+                        ...data.createdEdges
+                          .filter(isValidEdge)
+                      .map(
+                        (edge): EdgeAddChange<ReactFlowEdge> => {
+                          // Ensure we have valid message IDs (handle both naming conventions)
+                          const edgeWithCapitalizedFields = edge as typeof edge & { SourceMessageId?: number | string; TargetMessageId?: number | string };
+                          const sourceId = edge.sourceMessageId || edgeWithCapitalizedFields.SourceMessageId;
+                          const targetId = edge.targetMessageId || edgeWithCapitalizedFields.TargetMessageId;                              // Use handles from the original request if backend doesn't provide them
+                              const edgeWithHandles = {
+                                ...edge,
+                                sourceMessageId: Number(sourceId),
+                                targetMessageId: Number(targetId),
+                                sourceHandle: edge.sourceHandle || variables.sourceHandle,
+                                targetHandle: edge.targetHandle || variables.targetHandle,
+                              };
+                              return {
+                                type: 'add',
+                                item: messageEdgeToReactFlowEdge(edgeWithHandles),
+                              };
+                            }
+                          ),
+                        ...edges
+                          .filter((e) => e.target === node.id)
+                          .map(
+                            ({ id }): EdgeRemoveChange => ({
+                              type: 'remove',
+                              id,
+                            })
+                          ),
+                      ],
+                      eds
+                    )
+                  );
+                }
+                setNodes((nds) =>
+                  applyNodeChanges(
+                    nds.map<NodeReplaceChange>((n) => ({
+                      id: n.id,
+                      type: 'replace',
+                      item: { ...n, data: { ...n.data, isLoading: false } },
+                    })),
+                    nds
+                  )
+                );
+                setIsPromptSending(false);
+              },
+              onError: (fallbackError) => {
+                console.error('Fallback API also failed:', fallbackError);
+                setNodes((nds) =>
+                  applyNodeChanges(
+                    nds.map<NodeReplaceChange>((n) => ({
+                      id: n.id,
+                      type: 'replace',
+                      item: { ...n, data: { ...n.data, isLoading: false } },
+                    })),
+                    nds
+                  )
+                );
+                setIsPromptSending(false);
+                setStreamingResponseId(null);
+              },
+            });
+          },
+        });
+      } else {
+        // Non-streaming fallback (original logic)
+        createPrompt.mutate(promptRequest, {
+          onSettled: (data, _, variables) => {
+            if (data) {
+              setConversationId(data.conversationId);
+              setNodes((nds) =>
+                applyNodeChanges(
+                  [
+                    {
+                      type: 'add',
                       item: {
                         id: data.responseMessageId.toString(),
                         position: {
@@ -345,7 +733,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
                       },
                     },
                     {
-                      type: 'replace', // Replace the temporary prompt node with the created prompt node
+                      type: 'replace',
                       id: node.id,
                       item: {
                         id: data.promptMessageId.toString(),
@@ -356,7 +744,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
                         data: {
                           content: variables.content,
                           isEditable: false,
-                          isLoading: true, // Keep the prompt node in the loading state until all nodes are updated to the non-loading state
+                          isLoading: true,
                         },
                         type: 'prompt',
                         draggable: true,
@@ -370,14 +758,30 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
               setEdges((eds) =>
                 applyEdgeChanges(
                   [
-                    // Add the new edges
-                    ...data.createdEdges.map(
-                      (edge): EdgeAddChange<ReactFlowEdge> => ({
-                        type: 'add',
-                        item: messageEdgeToReactFlowEdge(edge),
-                      })
-                    ),
-                    // Remove the temporary edges to the prompt node
+                    // Filter out any invalid edges before processing
+                    ...data.createdEdges
+                      .filter(isValidEdge)
+                      .map(
+                        (edge): EdgeAddChange<ReactFlowEdge> => {
+                          // Ensure we have valid message IDs (handle both naming conventions)
+                          const edgeWithCapitalizedFields = edge as typeof edge & { SourceMessageId?: number | string; TargetMessageId?: number | string };
+                          const sourceId = edge.sourceMessageId || edgeWithCapitalizedFields.SourceMessageId;
+                          const targetId = edge.targetMessageId || edgeWithCapitalizedFields.TargetMessageId;
+                          
+                          // Use handles from the original request if backend doesn't provide them
+                          const edgeWithHandles = {
+                            ...edge,
+                            sourceMessageId: Number(sourceId),
+                            targetMessageId: Number(targetId),
+                            sourceHandle: edge.sourceHandle || variables.sourceHandle,
+                            targetHandle: edge.targetHandle || variables.targetHandle,
+                          };
+                          return {
+                            type: 'add',
+                            item: messageEdgeToReactFlowEdge(edgeWithHandles),
+                          };
+                        }
+                      ),
                     ...edges
                       .filter((e) => e.target === node.id)
                       .map(
@@ -391,7 +795,6 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
                 )
               );
             }
-            // Reset all nodes to the non-loading state
             setNodes((nds) =>
               applyNodeChanges(
                 nds.map<NodeReplaceChange>((n) => ({
@@ -402,11 +805,10 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
                 nds
               )
             );
-            setIsPromptSending(false); // Reset the prompt sending state
+            setIsPromptSending(false);
           },
           onError: (error) => {
             console.error('Error creating prompt:', error);
-            // Reset all nodes to the non-loading state when an error occurs; allows the user to try resending
             setNodes((nds) =>
               applyNodeChanges(
                 nds.map<NodeReplaceChange>((n) => ({
@@ -418,10 +820,19 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
               )
             );
           },
-        }
-      );
+        });
+      }
     },
-    [nodes, createPrompt, edges, setEdges, conversationId, isPromptSending, setNodes]
+    [
+      nodes,
+      createPrompt,
+      createPromptStreaming,
+      edges,
+      setEdges,
+      conversationId,
+      isPromptSending,
+      setNodes,
+    ]
   );
 
   const handleCreateNewPrompt = useCallback(() => {
