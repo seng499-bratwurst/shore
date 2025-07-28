@@ -124,7 +124,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
       <div className="bg-secondary text-secondary-foreground w-full text-sm px-sm py-xs">
         Response
       </div>
-      <div className="flex flex-col px-sm space-y-xs mt-xs select-text pointer-events-auto relative z-50">
+      <div className="flex flex-col px-sm space-y-xs mt-xs pointer-events-auto relative z-50">
         <div 
             className={`overflow-hidden transition-all duration-200 ${isExpanded ? 'max-h-none' : 'max-h-48'}`}
             ref={contentRef}
