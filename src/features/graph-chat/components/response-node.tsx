@@ -1,8 +1,15 @@
 
 import { Button } from '@/components/ui/button/button';
 import { type Node, type NodeProps } from '@xyflow/react';
-import React, { useState } from 'react';
-import { FiDownload, FiPlus, FiThumbsDown, FiThumbsUp } from 'react-icons/fi';
+import React, { useEffect, useState } from 'react';
+import { 
+  FiDownload,
+  FiPlus, 
+  FiThumbsDown,
+  FiThumbsUp,
+  FiChevronUp,
+  FiChevronDown 
+} from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import { useGraphContext } from '../contexts/graph-provider';
 import { useGraphChatSettingsStore } from '../stores/graph-chat-settings-store';
@@ -39,6 +46,9 @@ const ResponseBranchControls: React.FC<{
 
 const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
   const [thumb, setThumb] = useState<'up' | 'down' | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [showExpansion, setShowExpansion] = useState(false);
+  const contentRef = React.useRef<HTMLDivElement>(null);
   const { settings } = useGraphChatSettingsStore();
   const { data } = props;
 
@@ -98,35 +108,72 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
       alert('No API request URL found in this response.');
     }
   };
+  
+  useEffect(() => {
+    if (contentRef.current) {
+      const maxHeight = 192; // matching max-h-48
+      const actualHeight = contentRef.current.scrollHeight;
+      setShowExpansion(actualHeight > maxHeight);
+    }
+  }, [data.content]);
 
   return (
-    <div className="relative bg-card text-card-foreground rounded-b-lg shadow-md flex flex-col min-w-[100px] max-w-[300px]">
+    <div className="relative bg-card text-card-foreground rounded-b-lg shadow-md flex flex-col min-w-[100px] max-w-[600px]">
       <ResponseBranchControls onBranchResponse={onBranchResponse} />
       <NodeHandles settings={settings.response} />
       <div className="bg-secondary text-secondary-foreground w-full text-sm px-sm py-xs">
         Response
       </div>
-      <div className="flex flex-col px-sm space-y-xs mt-xs select-text pointer-events-auto relative z-50">
-        <ReactMarkdown
-          components={{
-            a: ({ ...props }) => (
-              <a
-                {...props}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer relative z-50"
-                style={{ 
-                  pointerEvents: 'auto', 
-                  zIndex: 50,
-                  position: 'relative'
-                }}
-              />
-            ),
-          }}
+      <div className="flex flex-col px-sm space-y-xs mt-xs pointer-events-auto relative z-50">
+        <div 
+            className={`overflow-hidden transition-all duration-200 ${isExpanded ? 'max-h-none' : 'max-h-48'}`}
+            ref={contentRef}
         >
-          {preprocessContent(data.content)}
-        </ReactMarkdown>
-        
+          <ReactMarkdown
+            components={{
+              a: ({ ...props }) => (
+                <a
+                  {...props}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer relative z-50"
+                  style={{ 
+                    pointerEvents: 'auto', 
+                    zIndex: 50,
+                    position: 'relative'
+                  }}
+                />
+              ),
+            }}
+          >
+            {preprocessContent(data.content)}
+          </ReactMarkdown>
+        </div>
+        {!isExpanded && showExpansion && (
+          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-card to-transparent pointer-events-none" />
+        )}
+          {showExpansion && (
+            <div className="flex justify-center mt-xs">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="text-xs"
+              >
+                {isExpanded ? (
+                  <>
+                    <FiChevronUp className="w-3 h-3 mr-1" />
+                    Show Less
+                  </>
+                ) : (
+                  <>
+                    <FiChevronDown className="w-3 h-3 mr-1" />
+                    Show More
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         {data.documents && data.documents.length > 0 && (
           <div className="references-section mt-xs pt-xs border-t border-border z-[1000] relative">
             <div className="text-xs font-medium text-muted-foreground mb-xs">References:</div>
