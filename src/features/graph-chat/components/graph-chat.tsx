@@ -317,6 +317,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
                         },
                         data: {
                           content: data.response,
+                          documents: data.documents || [], 
                           oncApiQuery: '',
                           oncApiResponse: '',
                         },
