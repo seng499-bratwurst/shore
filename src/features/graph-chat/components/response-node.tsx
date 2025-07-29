@@ -3,13 +3,7 @@ import { Button } from '@/components/ui/button/button';
 import { type Node, type NodeProps } from '@xyflow/react';
 import React, { useEffect, useState } from 'react';
 import { 
-  FiDownload,
-  FiPlus, 
-  FiThumbsDown,
-  FiThumbsUp,
-  FiChevronUp,
-  FiChevronDown 
-} from 'react-icons/fi';
+  FiExternalLink, FiPlus, FiThumbsDown, FiThumbsUp, FiChevronUp, FiChevronDown } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import { useGraphContext } from '../contexts/graph-provider';
 import { useGraphChatSettingsStore } from '../stores/graph-chat-settings-store';
@@ -69,46 +63,27 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
     });
   };
 
-  // Function to automatically convert URLs to markdown links
-  const preprocessContent = (content: string): string => {
-    // Only convert standalone URLs that are not already in markdown format
-    // This regex matches URLs that are:
-    // 1. Not preceded by ]( (not already in a markdown link)
-    // 2. Not inside square brackets [URL]
-    // 3. Standalone URLs on their own or preceded by whitespace
-    const urlRegex = /(?<!\]\()\b(https?:\/\/[^\s\[\]]+)(?!\))/g;
-    
-    return content.replace(urlRegex, (match, url) => {
-      // Additional safety check: ensure we're not inside a markdown link
-      const matchIndex = content.indexOf(match);
-      const beforeMatch = content.substring(0, matchIndex);
-      
-      // Check if we're inside square brackets [...]
-      const lastOpenBracket = beforeMatch.lastIndexOf('[');
-      const lastCloseBracket = beforeMatch.lastIndexOf(']');
-      
-      if (lastOpenBracket > lastCloseBracket) {
-        // We're inside square brackets, don't convert
-        return match;
-      }
-      
-      // Clean any trailing punctuation
-      const cleanUrl = url.replace(/[`\])}.,;:!?]+$/, '');
-      return `[${cleanUrl}](${cleanUrl})`;
-    });
-  };
-
-  // Extract URLs from the content for download functionality
+  // Extract URLs from the content
   const extractUrls = (text: string): string[] => {
-    // Remove markdown code blocks and backticks first
-    const cleanText = text.replace(/```[\s\S]*?```/g, '').replace(/`([^`]*)`/g, '$1');
     const urlRegex = /https?:\/\/[^\s\]`]+/g;
-    const urls = cleanText.match(urlRegex) || [];
-    // Clean any trailing backticks or punctuation
-    return urls.map(url => url.replace(/[`\])}]+$/, ''));
+    const urls = text.match(urlRegex) || [];
+    return urls.map(url => url.replace(/[`\])}.,;:!?]+$/, ''));
   };
 
-  const handleDownload = () => {
+  // remove URL from response
+  const cleanContentForDisplay = (content: string): string => {
+    let cleaned = content.replace(/https?:\/\/[^\s\]`]+/g, '');
+    
+    cleaned = cleaned.replace(/Here is the URL.*/gi, '');
+    
+    cleaned = cleaned.replace(/\n\s*\n\s*\n/g, '\n\n'); 
+    cleaned = cleaned.replace(/\s+/g, ' ');
+    cleaned = cleaned.trim();
+    
+    return cleaned;
+  };
+
+  const handleOpenLink = () => {
     const urls = extractUrls(data.content || '');
     if (urls.length > 0) {
       // Open the first URL found in the content
@@ -125,6 +100,10 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
       setShowExpansion(actualHeight > maxHeight);
     }
   }, [data.content]);
+
+  // Get cleaned content and check if URLs exist
+  const cleanedContent = cleanContentForDisplay(data.content);
+  const hasUrls = extractUrls(data.content || '').length > 0;
 
   return (
     <div className="relative bg-card text-card-foreground rounded-b-lg shadow-md flex flex-col min-w-[100px] max-w-[600px]">
@@ -155,7 +134,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
               ),
             }}
           >
-            {preprocessContent(data.content)}
+            {cleanedContent}
           </ReactMarkdown>
         </div>
         {!isExpanded && showExpansion && (
@@ -268,13 +247,13 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
               className="z-[1001] relative pointer-events-auto"
               size="icon" 
               variant="secondary" 
-              title={extractUrls(data.content || '').length > 0 ? "View API Request" : "No API Request Available"}
+              title={hasUrls ? "Open API Request" : "No API Request Available"}
               onClick={(e) => {
                 e.stopPropagation();
-                handleDownload();
+                handleOpenLink();
               }}
             >
-              <FiDownload className="w-icon-md h-icon-md text-secondary-foreground" />
+              <FiExternalLink className="w-icon-md h-icon-md text-secondary-foreground" />
             </Button>
           </div>
         </div>
