@@ -70,7 +70,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
   const [edges, setEdges] = useState<ReactFlowEdge[]>([]);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [isPromptSending, setIsPromptSending] = useState(false);
-  const [streamingResponseId, setStreamingResponseId] = useState<string | null>(null);
+  const [, setStreamingResponseId] = useState<string | null>(null);
   const { isLoggedIn } = useAuthStore();
 
   const queryClient = useQueryClient();

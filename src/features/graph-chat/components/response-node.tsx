@@ -206,8 +206,11 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
             <div className="space-y-1">
               {data.documents.slice(0, 3).map((doc, index) => {
                 console.log('Document object:', doc); // Debug log
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const docName = (doc as any).Name || doc.name || `Document ${index + 1}`;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const docSourceLink = (doc as any).SourceLink || doc.sourceLink;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const docId = (doc as any).Id || doc.id;
                 console.log('Document name:', docName); // Debug log
                 return (
