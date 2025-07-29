@@ -96,87 +96,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
     onSettled: (data) => setConversationId(data?.conversationId || 0),
   });
 
-  const createPromptStreaming = useCreatePromptStreaming(
-    conversationId || 0,
-    {
-      onChunk: (chunk: string) => {
-        // Update the streaming response node in real-time
-        setNodes((nds) =>
-          applyNodeChanges(
-            nds.map<NodeReplaceChange>((n) => {
-              if (n.id === streamingResponseId && n.type === 'response') {
-                const currentContent = n.data.streamingContent || '';
-                return {
-                  id: n.id,
-                  type: 'replace',
-                  item: { 
-                    ...n, 
-                    data: { 
-                      ...n.data, 
-                      isStreaming: true,
-                      streamingContent: currentContent + chunk 
-                    } 
-                  },
-                };
-              }
-              return {
-                id: n.id,
-                type: 'replace',
-                item: n,
-              };
-            }),
-            nds
-          )
-        );
-      },
-      onComplete: (response) => {
-        // Update the response node with final content and remove streaming state
-        setNodes((nds) =>
-          applyNodeChanges(
-            nds.map<NodeReplaceChange>((n) => {
-              if (n.id === streamingResponseId && n.type === 'response') {
-                return {
-                  id: n.id,
-                  type: 'replace',
-                  item: { 
-                    ...n, 
-                    data: { 
-                      ...n.data, 
-                      content: response.response,
-                      isStreaming: false,
-                      streamingContent: undefined 
-                    } 
-                  },
-                };
-              }
-              return {
-                id: n.id,
-                type: 'replace',
-                item: n,
-              };
-            }),
-            nds
-          )
-        );
-        setStreamingResponseId(null);
-      },
-      onError: (error: unknown) => {
-        let errorMessage = 'Unknown error';
-        if (error instanceof Error) {
-          errorMessage = error.message;
-        } else if (typeof error === 'string') {
-          errorMessage = error;
-        } else if (error && typeof error === 'object' && 'message' in error) {
-          errorMessage = String((error as any).message);
-        }
-        console.error('Streaming error:', errorMessage);
-        setStreamingResponseId(null);
-      }
-    },
-    {
-      onSettled: (data) => setConversationId(data?.conversationId || 0),
-    }
-  );
+  const createPromptStreaming = useCreatePromptStreaming(conversationId || 0);
 
   const throttledMessagePositionUpdate = useRef(
     throttle(
@@ -454,7 +374,77 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
           )
         );
 
-        createPromptStreaming.mutate(promptRequest, {
+        createPromptStreaming.mutate({
+          ...promptRequest,
+          callbacks: {
+            onChunk: (chunk: string) => {
+              // Update the streaming response node in real-time
+              setNodes((nds) =>
+                applyNodeChanges(
+                  nds.map<NodeReplaceChange>((n) => {
+                    if (n.id === tempResponseId && n.type === 'response') {
+                      const currentContent = n.data.streamingContent || '';
+                      return {
+                        id: n.id,
+                        type: 'replace',
+                        item: { 
+                          ...n, 
+                          data: { 
+                            ...n.data, 
+                            isStreaming: true,
+                            streamingContent: currentContent + chunk 
+                          } 
+                        },
+                      };
+                    }
+                    return {
+                      id: n.id,
+                      type: 'replace',
+                      item: n,
+                    };
+                  }),
+                  nds
+                )
+              );
+            },
+            onComplete: (response) => {
+              console.log('Streaming complete:', response);
+              // Update the response node with final content and remove streaming state
+              setNodes((nds) =>
+                applyNodeChanges(
+                  nds.map<NodeReplaceChange>((n) => {
+                    if (n.id === tempResponseId && n.type === 'response') {
+                      return {
+                        id: n.id,
+                        type: 'replace',
+                        item: { 
+                          ...n, 
+                          data: { 
+                            ...n.data, 
+                            content: response.response,
+                            documents: response.documents || [],
+                            isStreaming: false,
+                            streamingContent: undefined 
+                          } 
+                        },
+                      };
+                    }
+                    return {
+                      id: n.id,
+                      type: 'replace',
+                      item: n,
+                    };
+                  }),
+                  nds
+                )
+              );
+            },
+            onError: (error: string) => {
+              console.error('Streaming error:', error);
+              setStreamingResponseId(null);
+            }
+          }
+        }, {
           onSettled: (data, _, variables) => {
             console.log('Streaming settled with data:', data);
             if (data) {

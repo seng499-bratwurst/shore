@@ -105,8 +105,13 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
     <div className="relative bg-card text-card-foreground rounded-b-lg shadow-md flex flex-col min-w-[100px] max-w-[300px]">
       <ResponseBranchControls onBranchResponse={onBranchResponse} />
       <NodeHandles settings={settings.response} />
-      <div className="bg-secondary text-secondary-foreground w-full text-sm px-sm py-xs">
-        Response
+      <div className="bg-secondary text-secondary-foreground w-full text-sm px-sm py-xs flex items-center justify-between">
+        <span>Response</span>
+        {data.isStreaming && (
+          <span className="text-xs text-muted-foreground animate-pulse">
+            Streaming...
+          </span>
+        )}
       </div>
       <div className="flex flex-col px-sm space-y-xs mt-xs select-text pointer-events-auto relative z-50">
         <ReactMarkdown
@@ -126,41 +131,50 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
             ),
           }}
         >
-          {preprocessContent(data.content)}
+          {preprocessContent(data.isStreaming && data.streamingContent !== undefined ? data.streamingContent : data.content)}
         </ReactMarkdown>
         
         {data.documents && data.documents.length > 0 && (
           <div className="references-section mt-xs pt-xs border-t border-border z-[1000] relative">
             <div className="text-xs font-medium text-muted-foreground mb-xs">References:</div>
             <div className="space-y-1">
-              {data.documents.slice(0, 3).map((doc, index) => (
-                <div key={doc.id} className="text-xs flex items-start gap-2">
-                  <span className="font-medium text-primary min-w-[20px]">[{index + 1}]</span>
-                  <div className="flex-1">
-                    {doc.sourceLink ? (
-                      <a 
-                        href={doc.sourceLink} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline cursor-pointer z-[1001] relative"
-                        title={`Open ${doc.name}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          window.open(doc.sourceLink, '_blank');
-                        }}
-                        onMouseDown={(e) => {
-                          e.stopPropagation();
-                        }}
-                      >
-                        {doc.name}
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground">{doc.name}</span>
-                    )}
+              {data.documents.slice(0, 3).map((doc, index) => {
+                console.log('Document object:', doc); // Debug log
+                const docName = (doc as any).Name || doc.name || `Document ${index + 1}`;
+                const docSourceLink = (doc as any).SourceLink || doc.sourceLink;
+                const docId = (doc as any).Id || doc.id;
+                console.log('Document name:', docName); // Debug log
+                return (
+                  <div key={docId || `doc-${index}`} className="text-xs flex items-start gap-2">
+                    <span className="font-medium text-primary min-w-[20px]">[{index + 1}]</span>
+                    <div className="flex-1">
+                      {docSourceLink ? (
+                        <a 
+                          href={docSourceLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline cursor-pointer z-[1001] relative"
+                          title={`Open ${docName}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            window.open(docSourceLink, '_blank');
+                          }}
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                          }}
+                        >
+                          {docName}
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          {docName}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

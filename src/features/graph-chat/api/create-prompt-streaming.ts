@@ -200,12 +200,11 @@ const createPromptStreaming = async (
 
 export const useCreatePromptStreaming = (
   conversationId: number | undefined,
-  callbacks: StreamingCallbacks = {},
   options: Omit<
-    UseMutationOptions<CreatePromptStreamResponse, unknown, CreatePromptStreamRequest, unknown>,
+    UseMutationOptions<CreatePromptStreamResponse, unknown, CreatePromptStreamRequest & { callbacks?: StreamingCallbacks }, unknown>,
     'mutationFn'
   > = {}
-): UseMutationResult<CreatePromptStreamResponse, unknown, CreatePromptStreamRequest, unknown> => {
+): UseMutationResult<CreatePromptStreamResponse, unknown, CreatePromptStreamRequest & { callbacks?: StreamingCallbacks }, unknown> => {
   const queryClient = useQueryClient();
 
   const updateCache = (response: CreatePromptStreamResponse, request: CreatePromptStreamRequest) => {
@@ -249,8 +248,9 @@ export const useCreatePromptStreaming = (
     if (!conversationId) queryClient.invalidateQueries({ queryKey: listConversationsQueryKey });
   };
 
-  return useMutation<CreatePromptStreamResponse, unknown, CreatePromptStreamRequest, unknown>({
-    mutationFn: (prompt: CreatePromptStreamRequest) => createPromptStreaming(prompt, callbacks),
+  return useMutation<CreatePromptStreamResponse, unknown, CreatePromptStreamRequest & { callbacks?: StreamingCallbacks }, unknown>({
+    mutationFn: ({ callbacks, ...prompt }: CreatePromptStreamRequest & { callbacks?: StreamingCallbacks }) => 
+      createPromptStreaming(prompt, callbacks || {}),
     onSuccess: (response, request) => {
       updateCache(response, request);
       options.onSuccess?.(response, request, undefined);
