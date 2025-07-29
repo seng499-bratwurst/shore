@@ -1,14 +1,13 @@
-
 import { Button } from '@/components/ui/button/button';
 import { type Node, type NodeProps } from '@xyflow/react';
 import React, { useEffect, useState } from 'react';
-import { 
+import {
   FiDownload,
-  FiPlus, 
+  FiPlus,
   FiThumbsDown,
   FiThumbsUp,
   FiChevronUp,
-  FiChevronDown 
+  FiChevronDown,
 } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import { useGraphContext } from '../contexts/graph-provider';
@@ -18,9 +17,8 @@ import { BaseNodeActions } from './node-edge-controls';
 import { NodeHandles } from './node-handles';
 import { useUpdateFeedback } from '../api/update-feedback';
 
-
 type ResponseNodeType = Node<{
-  content: string; 
+  content: string;
   documents?: Array<{
     id: number;
     name: string;
@@ -29,8 +27,8 @@ type ResponseNodeType = Node<{
     sourceLink: string;
     sourceType: string;
   }>;
-  isStreaming?: boolean; 
-  streamingContent?: string; 
+  isStreaming?: boolean;
+  streamingContent?: string;
   isHelpful: boolean;
 }>;
 
@@ -50,7 +48,6 @@ const ResponseBranchControls: React.FC<{
 };
 
 const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
-  
   const [isExpanded, setIsExpanded] = useState(false);
   const [showExpansion, setShowExpansion] = useState(false);
   const contentRef = React.useRef<HTMLDivElement>(null);
@@ -61,7 +58,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
     data.isHelpful === true ? 'up' : data.isHelpful === false ? 'down' : null
   );
 
-  const updateFeedback = useUpdateFeedback(0); 
+  const updateFeedback = useUpdateFeedback(0);
 
   const { onBranchResponse: _onBranchResponse } = useGraphContext();
   const onBranchResponse = (position: HandleSide) => {
@@ -79,21 +76,21 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
     // 2. Not inside square brackets [URL]
     // 3. Standalone URLs on their own or preceded by whitespace
     const urlRegex = /(?<!\]\()\b(https?:\/\/[^\s\[\]]+)(?!\))/g;
-    
+
     return content.replace(urlRegex, (match, url) => {
       // Additional safety check: ensure we're not inside a markdown link
       const matchIndex = content.indexOf(match);
       const beforeMatch = content.substring(0, matchIndex);
-      
+
       // Check if we're inside square brackets [...]
       const lastOpenBracket = beforeMatch.lastIndexOf('[');
       const lastCloseBracket = beforeMatch.lastIndexOf(']');
-      
+
       if (lastOpenBracket > lastCloseBracket) {
         // We're inside square brackets, don't convert
         return match;
       }
-      
+
       // Clean any trailing punctuation
       const cleanUrl = url.replace(/[`\])}.,;:!?]+$/, '');
       return `[${cleanUrl}](${cleanUrl})`;
@@ -107,7 +104,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
     const urlRegex = /https?:\/\/[^\s\]`]+/g;
     const urls = cleanText.match(urlRegex) || [];
     // Clean any trailing backticks or punctuation
-    return urls.map(url => url.replace(/[`\])}]+$/, ''));
+    return urls.map((url) => url.replace(/[`\])}]+$/, ''));
   };
 
   const handleDownload = () => {
@@ -119,7 +116,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
       alert('No API request URL found in this response.');
     }
   };
-  
+
   useEffect(() => {
     if (contentRef.current) {
       const maxHeight = 192; // matching max-h-48
@@ -136,7 +133,10 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
         <span>Response</span>
       </div>
       <div className="flex flex-col px-sm space-y-xs mt-xs pointer-events-auto relative z-50">
-        <div className={`overflow-hidden transition-all duration-200 ${isExpanded ? 'max-h-none' : 'max-h-48'}`} ref={contentRef}>
+        <div
+          className={`overflow-hidden transition-all duration-200 ${isExpanded ? 'max-h-none' : 'max-h-48'}`}
+          ref={contentRef}
+        >
           <ReactMarkdown
             components={{
               a: ({ ...props }) => (
@@ -145,16 +145,16 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer relative z-50"
-                  style={{ 
-                    pointerEvents: 'auto', 
+                  style={{
+                    pointerEvents: 'auto',
                     zIndex: 50,
-                    position: 'relative'
+                    position: 'relative',
                   }}
                 />
               ),
             }}
           >
-            {preprocessContent(data.isStreaming ? (data.streamingContent || '') : data.content)}
+            {preprocessContent(data.isStreaming ? data.streamingContent || '' : data.content)}
           </ReactMarkdown>
         </div>
         {data.isStreaming && (
@@ -188,27 +188,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
             </Button>
           </div>
         )}
-      {/* <div className="flex flex-col px-sm space-y-xs mt-xs select-text pointer-events-auto relative z-50">
-        <ReactMarkdown
-          components={{
-            a: ({ ...props }) => (
-              <a
-                {...props}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer relative z-50"
-                style={{ 
-                  pointerEvents: 'auto', 
-                  zIndex: 50,
-                  position: 'relative'
-                }}
-              />
-            ),
-          }}
-        >
-          {preprocessContent(data.isStreaming && data.streamingContent !== undefined ? data.streamingContent : data.content)}
-        </ReactMarkdown> */}
-        
+
         {data.documents && data.documents.length > 0 && (
           <div className="references-section mt-xs pt-xs border-t border-border z-[1000] relative">
             <div className="text-xs font-medium text-muted-foreground mb-xs">References:</div>
@@ -227,9 +207,9 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
                     <span className="font-medium text-primary min-w-[20px]">[{index + 1}]</span>
                     <div className="flex-1">
                       {docSourceLink ? (
-                        <a 
-                          href={docSourceLink} 
-                          target="_blank" 
+                        <a
+                          href={docSourceLink}
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="text-primary hover:underline cursor-pointer z-[1001] relative"
                           title={`Open ${docName}`}
@@ -245,9 +225,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
                           {docName}
                         </a>
                       ) : (
-                        <span className="text-muted-foreground">
-                          {docName}
-                        </span>
+                        <span className="text-muted-foreground">{docName}</span>
                       )}
                     </div>
                   </div>
@@ -256,7 +234,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
             </div>
           </div>
         )}
-        
+
         <div className="flex justify-between items-center mb-xs z-[1000] relative">
           <div className="flex">
             <Button
@@ -302,11 +280,15 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
             </Button>
           </div>
           <div className="flex">
-            <Button 
+            <Button
               className="z-[1001] relative pointer-events-auto"
-              size="icon" 
-              variant="secondary" 
-              title={extractUrls(data.content || '').length > 0 ? "View API Request" : "No API Request Available"}
+              size="icon"
+              variant="secondary"
+              title={
+                extractUrls(data.content || '').length > 0
+                  ? 'View API Request'
+                  : 'No API Request Available'
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 handleDownload();
@@ -318,7 +300,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
         </div>
       </div>
     </div>
-  // </div>
+    // </div>
   );
 };
 

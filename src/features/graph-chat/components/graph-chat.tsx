@@ -52,7 +52,12 @@ const POSITION_UPDATE_INTERVAL = 2500; // Interval to send message position upda
 const USE_STREAMING = true; // Feature flag for streaming - ENABLED now that backend is verified
 
 // Helper function to check if an edge has valid message IDs (handles both capitalized and lowercase field names)
-const isValidEdge = (edge: { sourceMessageId?: number | string; SourceMessageId?: number | string; targetMessageId?: number | string; TargetMessageId?: number | string; }) => {
+const isValidEdge = (edge: {
+  sourceMessageId?: number | string;
+  SourceMessageId?: number | string;
+  targetMessageId?: number | string;
+  TargetMessageId?: number | string;
+}) => {
   const sourceId = edge.sourceMessageId || edge.SourceMessageId;
   const targetId = edge.targetMessageId || edge.TargetMessageId;
   return sourceId && targetId;
@@ -134,7 +139,6 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
 
   useEffect(() => {
     if (hasLoadedInitialGraph) {
-      console.log({ messages, messageEdges });
       setNodes([]);
       setEdges([]);
       setNodes((nds) =>
@@ -374,253 +378,240 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
           )
         );
 
-        createPromptStreaming.mutate({
-          ...promptRequest,
-          callbacks: {
-            onChunk: (chunk: string) => {
-              // Update the streaming response node in real-time
-              setNodes((nds) =>
-                applyNodeChanges(
-                  nds.map<NodeReplaceChange>((n) => {
-                    if (n.id === tempResponseId && n.type === 'response') {
-                      const currentContent = n.data.streamingContent || '';
+        createPromptStreaming.mutate(
+          {
+            ...promptRequest,
+            callbacks: {
+              onChunk: (chunk: string) => {
+                // Update the streaming response node in real-time
+                setNodes((nds) =>
+                  applyNodeChanges(
+                    nds.map<NodeReplaceChange>((n) => {
+                      if (n.id === tempResponseId && n.type === 'response') {
+                        const currentContent = n.data.streamingContent || '';
+                        return {
+                          id: n.id,
+                          type: 'replace',
+                          item: {
+                            ...n,
+                            data: {
+                              ...n.data,
+                              isStreaming: true,
+                              streamingContent: currentContent + chunk,
+                            },
+                          },
+                        };
+                      }
                       return {
                         id: n.id,
                         type: 'replace',
-                        item: { 
-                          ...n, 
-                          data: { 
-                            ...n.data, 
-                            isStreaming: true,
-                            streamingContent: currentContent + chunk 
-                          } 
-                        },
+                        item: n,
                       };
-                    }
-                    return {
-                      id: n.id,
-                      type: 'replace',
-                      item: n,
-                    };
-                  }),
-                  nds
-                )
-              );
-            },
-            onComplete: (response) => {
-              console.log('Streaming complete:', response);
-              // Update the response node with final content and remove streaming state
-              setNodes((nds) =>
-                applyNodeChanges(
-                  nds.map<NodeReplaceChange>((n) => {
-                    if (n.id === tempResponseId && n.type === 'response') {
+                    }),
+                    nds
+                  )
+                );
+              },
+              onComplete: (response) => {
+                // Update the response node with final content and remove streaming state
+                setNodes((nds) =>
+                  applyNodeChanges(
+                    nds.map<NodeReplaceChange>((n) => {
+                      if (n.id === tempResponseId && n.type === 'response') {
+                        return {
+                          id: n.id,
+                          type: 'replace',
+                          item: {
+                            ...n,
+                            data: {
+                              ...n.data,
+                              content: response.response,
+                              documents: response.documents || [],
+                              isStreaming: false,
+                              streamingContent: undefined,
+                            },
+                          },
+                        };
+                      }
                       return {
                         id: n.id,
                         type: 'replace',
-                        item: { 
-                          ...n, 
-                          data: { 
-                            ...n.data, 
-                            content: response.response,
-                            documents: response.documents || [],
+                        item: n,
+                      };
+                    }),
+                    nds
+                  )
+                );
+              },
+              onError: (error: string) => {
+                console.error('Streaming error:', error);
+                setStreamingResponseId(null);
+              },
+            },
+          },
+          {
+            onSettled: (data, _, variables) => {
+              if (data) {
+                setConversationId(data.conversationId);
+                // Replace the temporary response node with the actual response node
+                setNodes((nds) =>
+                  applyNodeChanges(
+                    [
+                      {
+                        type: 'replace', // Replace the temp response node
+                        id: tempResponseId,
+                        item: {
+                          id: data.responseMessageId.toString(),
+                          position: {
+                            x: variables.responseXCoordinate,
+                            y: variables.responseYCoordinate,
+                          },
+                          data: {
+                            content: data.response,
                             isStreaming: false,
-                            streamingContent: undefined 
-                          } 
+                            documents: data.documents || [],
+                            oncApiQuery: '',
+                            oncApiResponse: '',
+                          },
+                          type: 'response',
+                          draggable: true,
                         },
-                      };
-                    }
-                    return {
-                      id: n.id,
-                      type: 'replace',
-                      item: n,
-                    };
-                  }),
-                  nds
-                )
-              );
-            },
-            onError: (error: string) => {
-              console.error('Streaming error:', error);
-              setStreamingResponseId(null);
-            }
-          }
-        }, {
-          onSettled: (data, _, variables) => {
-            console.log('Streaming settled with data:', data);
-            console.log('Documents in settled data:', data?.documents);
-            if (data) {
-              console.log('Created edges from streaming:', data.createdEdges);
-              console.log('First edge details:', data.createdEdges[0]);
-              console.log('Edge sourceHandle:', data.createdEdges[0]?.sourceHandle);
-              console.log('Edge targetHandle:', data.createdEdges[0]?.targetHandle);
-              console.log('Edge sourceMessageId:', data.createdEdges[0]?.sourceMessageId);
-              console.log('Edge targetMessageId:', data.createdEdges[0]?.targetMessageId);
-              console.log('Filtered edges:', data.createdEdges.filter(isValidEdge));
-              setConversationId(data.conversationId);
-              // Replace the temporary response node with the actual response node
-              setNodes((nds) =>
-                applyNodeChanges(
-                  [
-                    {
-                      type: 'replace', // Replace the temp response node
-                      id: tempResponseId,
-                      item: {
-                        id: data.responseMessageId.toString(),
-                        position: {
-                          x: variables.responseXCoordinate,
-                          y: variables.responseYCoordinate,
-                        },
-                        data: {
-                          content: data.response,
-                          isStreaming: false,
-                          documents: data.documents || [],
-                          oncApiQuery: '',
-                          oncApiResponse: '',
-                        },
-                        type: 'response',
-                        draggable: true,
                       },
-                    },
-                    {
-                      type: 'replace', // Replace the temporary prompt node
-                      id: node.id,
-                      item: {
-                        id: data.promptMessageId.toString(),
-                        position: {
-                          x: variables.xCoordinate,
-                          y: variables.yCoordinate,
+                      {
+                        type: 'replace', // Replace the temporary prompt node
+                        id: node.id,
+                        item: {
+                          id: data.promptMessageId.toString(),
+                          position: {
+                            x: variables.xCoordinate,
+                            y: variables.yCoordinate,
+                          },
+                          data: {
+                            content: variables.content,
+                            isEditable: false,
+                            isLoading: false,
+                          },
+                          type: 'prompt',
+                          draggable: true,
                         },
-                        data: {
-                          content: variables.content,
-                          isEditable: false,
-                          isLoading: false,
-                        },
-                        type: 'prompt',
-                        draggable: true,
                       },
-                    },
-                  ],
-                  nds
-                )
-              );
+                    ],
+                    nds
+                  )
+                );
 
-              setEdges((eds) =>
-                applyEdgeChanges(
-                  [
-                    // Remove the temporary edge from temp prompt to temp response
-                    {
-                      type: 'remove',
-                      id: `${node.id}-${tempResponseId}`,
-                    },
-                    // Filter out any invalid edges before processing
-                    ...data.createdEdges
-                      .filter(isValidEdge)
-                      .map(
-                        (edge): EdgeAddChange<ReactFlowEdge> => {
+                setEdges((eds) =>
+                  applyEdgeChanges(
+                    [
+                      // Remove the temporary edge from temp prompt to temp response
+                      {
+                        type: 'remove',
+                        id: `${node.id}-${tempResponseId}`,
+                      },
+                      // Filter out any invalid edges before processing
+                      ...data.createdEdges
+                        .filter(isValidEdge)
+                        .map((edge): EdgeAddChange<ReactFlowEdge> => {
                           // Use handles from the original request if backend doesn't provide them
                           const edgeWithHandles = {
                             ...edge,
                             sourceHandle: edge.sourceHandle || variables.sourceHandle,
                             targetHandle: edge.targetHandle || variables.targetHandle,
                           };
-                          console.log('Edge with handles:', edgeWithHandles);
                           return {
                             type: 'add',
                             item: messageEdgeToReactFlowEdge(edgeWithHandles),
                           };
-                        }
-                      ),
-                    ...edges
-                      .filter((e) => e.target === node.id)
-                      .map(
-                        ({ id }): EdgeRemoveChange => ({
-                          type: 'remove',
-                          id,
-                        })
-                      ),
-                  ],
-                  eds
+                        }),
+                      ...edges
+                        .filter((e) => e.target === node.id)
+                        .map(
+                          ({ id }): EdgeRemoveChange => ({
+                            type: 'remove',
+                            id,
+                          })
+                        ),
+                    ],
+                    eds
+                  )
+                );
+              }
+              setNodes((nds) =>
+                applyNodeChanges(
+                  nds.map<NodeReplaceChange>((n) => ({
+                    id: n.id,
+                    type: 'replace',
+                    item: { ...n, data: { ...n.data, isLoading: false } },
+                  })),
+                  nds
                 )
               );
-            }
-            setNodes((nds) =>
-              applyNodeChanges(
-                nds.map<NodeReplaceChange>((n) => ({
-                  id: n.id,
-                  type: 'replace',
-                  item: { ...n, data: { ...n.data, isLoading: false } },
-                })),
-                nds
-              )
-            );
-            setIsPromptSending(false);
-          },
-          onError: (error) => {
-            console.error('Error creating prompt with streaming:', error);
-            
-            // Fallback to regular API if streaming fails
-            console.log('Falling back to non-streaming API...');
-            createPrompt.mutate(promptRequest, {
-              onSettled: (data, _, variables) => {
-                if (data) {
-                  setConversationId(data.conversationId);
-                  // Remove the temporary streaming response node and add the actual response
-                  setNodes((nds) =>
-                    applyNodeChanges(
-                      [
-                        {
-                          type: 'remove',
-                          id: tempResponseId,
-                        },
-                        {
-                          type: 'add',
-                          item: {
-                            id: data.responseMessageId.toString(),
-                            position: {
-                              x: variables.responseXCoordinate,
-                              y: variables.responseYCoordinate,
-                            },
-                            data: {
-                              content: data.response,
-                              documents: data.documents || [],
-                              oncApiQuery: '',
-                              oncApiResponse: '',
-                            },
-                            type: 'response',
-                            draggable: true,
-                          },
-                        },
-                        {
-                          type: 'replace',
-                          id: node.id,
-                          item: {
-                            id: data.promptMessageId.toString(),
-                            position: {
-                              x: variables.xCoordinate,
-                              y: variables.yCoordinate,
-                            },
-                            data: {
-                              content: variables.content,
-                              isEditable: false,
-                              isLoading: false,
-                            },
-                            type: 'prompt',
-                            draggable: true,
-                          },
-                        },
-                      ],
-                      nds
-                    )
-                  );
+              setIsPromptSending(false);
+            },
+            onError: (error) => {
+              console.error('Error creating prompt with streaming:', error);
 
-                  setEdges((eds) =>
-                    applyEdgeChanges(
-                      [
-                        // Filter out any invalid edges before processing
-                        ...data.createdEdges
-                          .filter(isValidEdge)
-                          .map(
-                            (edge): EdgeAddChange<ReactFlowEdge> => {
+              // Fallback to regular API if streaming fails
+              createPrompt.mutate(promptRequest, {
+                onSettled: (data, _, variables) => {
+                  if (data) {
+                    setConversationId(data.conversationId);
+                    // Remove the temporary streaming response node and add the actual response
+                    setNodes((nds) =>
+                      applyNodeChanges(
+                        [
+                          {
+                            type: 'remove',
+                            id: tempResponseId,
+                          },
+                          {
+                            type: 'add',
+                            item: {
+                              id: data.responseMessageId.toString(),
+                              position: {
+                                x: variables.responseXCoordinate,
+                                y: variables.responseYCoordinate,
+                              },
+                              data: {
+                                content: data.response,
+                                documents: data.documents || [],
+                                oncApiQuery: '',
+                                oncApiResponse: '',
+                              },
+                              type: 'response',
+                              draggable: true,
+                            },
+                          },
+                          {
+                            type: 'replace',
+                            id: node.id,
+                            item: {
+                              id: data.promptMessageId.toString(),
+                              position: {
+                                x: variables.xCoordinate,
+                                y: variables.yCoordinate,
+                              },
+                              data: {
+                                content: variables.content,
+                                isEditable: false,
+                                isLoading: false,
+                              },
+                              type: 'prompt',
+                              draggable: true,
+                            },
+                          },
+                        ],
+                        nds
+                      )
+                    );
+
+                    setEdges((eds) =>
+                      applyEdgeChanges(
+                        [
+                          // Filter out any invalid edges before processing
+                          ...data.createdEdges
+                            .filter(isValidEdge)
+                            .map((edge): EdgeAddChange<ReactFlowEdge> => {
                               // Use handles from the original request if backend doesn't provide them
                               const edgeWithHandles = {
                                 ...edge,
@@ -631,51 +622,51 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
                                 type: 'add',
                                 item: messageEdgeToReactFlowEdge(edgeWithHandles),
                               };
-                            }
-                          ),
-                        ...edges
-                          .filter((e) => e.target === node.id)
-                          .map(
-                            ({ id }): EdgeRemoveChange => ({
-                              type: 'remove',
-                              id,
-                            })
-                          ),
-                      ],
-                      eds
+                            }),
+                          ...edges
+                            .filter((e) => e.target === node.id)
+                            .map(
+                              ({ id }): EdgeRemoveChange => ({
+                                type: 'remove',
+                                id,
+                              })
+                            ),
+                        ],
+                        eds
+                      )
+                    );
+                  }
+                  setNodes((nds) =>
+                    applyNodeChanges(
+                      nds.map<NodeReplaceChange>((n) => ({
+                        id: n.id,
+                        type: 'replace',
+                        item: { ...n, data: { ...n.data, isLoading: false } },
+                      })),
+                      nds
                     )
                   );
-                }
-                setNodes((nds) =>
-                  applyNodeChanges(
-                    nds.map<NodeReplaceChange>((n) => ({
-                      id: n.id,
-                      type: 'replace',
-                      item: { ...n, data: { ...n.data, isLoading: false } },
-                    })),
-                    nds
-                  )
-                );
-                setIsPromptSending(false);
-              },
-              onError: (fallbackError) => {
-                console.error('Fallback API also failed:', fallbackError);
-                setNodes((nds) =>
-                  applyNodeChanges(
-                    nds.map<NodeReplaceChange>((n) => ({
-                      id: n.id,
-                      type: 'replace',
-                      item: { ...n, data: { ...n.data, isLoading: false } },
-                    })),
-                    nds
-                  )
-                );
-                setIsPromptSending(false);
-                setStreamingResponseId(null);
-              },
-            });
-          },
-        });
+                  setIsPromptSending(false);
+                },
+                onError: (fallbackError) => {
+                  console.error('Fallback API also failed:', fallbackError);
+                  setNodes((nds) =>
+                    applyNodeChanges(
+                      nds.map<NodeReplaceChange>((n) => ({
+                        id: n.id,
+                        type: 'replace',
+                        item: { ...n, data: { ...n.data, isLoading: false } },
+                      })),
+                      nds
+                    )
+                  );
+                  setIsPromptSending(false);
+                  setStreamingResponseId(null);
+                },
+              });
+            },
+          }
+        );
       } else {
         // Non-streaming fallback (original logic)
         createPrompt.mutate(promptRequest, {
@@ -695,7 +686,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
                         },
                         data: {
                           content: data.response,
-                          documents: data.documents || [], 
+                          documents: data.documents || [],
                           oncApiQuery: '',
                           oncApiResponse: '',
                         },
@@ -732,20 +723,18 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
                     // Filter out any invalid edges before processing
                     ...data.createdEdges
                       .filter(isValidEdge)
-                      .map(
-                        (edge): EdgeAddChange<ReactFlowEdge> => {
-                          // Use handles from the original request if backend doesn't provide them
-                          const edgeWithHandles = {
-                            ...edge,
-                            sourceHandle: edge.sourceHandle || variables.sourceHandle,
-                            targetHandle: edge.targetHandle || variables.targetHandle,
-                          };
-                          return {
-                            type: 'add',
-                            item: messageEdgeToReactFlowEdge(edgeWithHandles),
-                          };
-                        }
-                      ),
+                      .map((edge): EdgeAddChange<ReactFlowEdge> => {
+                        // Use handles from the original request if backend doesn't provide them
+                        const edgeWithHandles = {
+                          ...edge,
+                          sourceHandle: edge.sourceHandle || variables.sourceHandle,
+                          targetHandle: edge.targetHandle || variables.targetHandle,
+                        };
+                        return {
+                          type: 'add',
+                          item: messageEdgeToReactFlowEdge(edgeWithHandles),
+                        };
+                      }),
                     ...edges
                       .filter((e) => e.target === node.id)
                       .map(
