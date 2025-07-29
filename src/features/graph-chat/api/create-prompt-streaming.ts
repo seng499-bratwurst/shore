@@ -57,6 +57,14 @@ type CreatePromptStreamResponse = {
   createdEdges: Edge[];
   promptMessageId: number;
   response: string;
+  documents: Array<{
+    id: number;
+    name: string;
+    createdAt: string;
+    uploadedBy: string;
+    sourceLink: string;
+    sourceType: string;
+  }>;
 };
 
 // Streaming callbacks
@@ -156,8 +164,18 @@ const createPromptStreaming = async (
                   createdEdges: event.data.createdEdges,
                   promptMessageId: event.data.promptMessageId,
                   response: event.data.response,
+                  documents: (event.data.documents || []) as Array<{
+                    id: number;
+                    name: string;
+                    createdAt: string;
+                    uploadedBy: string;
+                    sourceLink: string;
+                    sourceType: string;
+                  }>,
                 };
-                callbacks.onComplete?.(finalResponse);
+                if (finalResponse) {
+                  callbacks.onComplete?.(finalResponse);
+                }
                 break;
               case 'error':
                 callbacks.onError?.(event.data);

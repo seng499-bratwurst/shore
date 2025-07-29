@@ -482,6 +482,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
                         data: {
                           content: data.response,
                           isStreaming: false,
+                          documents: data.documents || [],
                           oncApiQuery: '',
                           oncApiResponse: '',
                         },
@@ -590,6 +591,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
                             },
                             data: {
                               content: data.response,
+                              documents: data.documents || [],
                               oncApiQuery: '',
                               oncApiResponse: '',
                             },
