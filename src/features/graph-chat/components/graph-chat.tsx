@@ -447,6 +447,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         }, {
           onSettled: (data, _, variables) => {
             console.log('Streaming settled with data:', data);
+            console.log('Documents in settled data:', data?.documents);
             if (data) {
               console.log('Created edges from streaming:', data.createdEdges);
               console.log('First edge details:', data.createdEdges[0]);

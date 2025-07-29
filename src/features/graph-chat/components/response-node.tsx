@@ -125,17 +125,9 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
       <NodeHandles settings={settings.response} />
       <div className="bg-secondary text-secondary-foreground w-full text-sm px-sm py-xs flex items-center justify-between">
         <span>Response</span>
-        {data.isStreaming && (
-          <span className="text-xs text-muted-foreground animate-pulse">
-            Streaming...
-          </span>
-        )}
       </div>
       <div className="flex flex-col px-sm space-y-xs mt-xs pointer-events-auto relative z-50">
-        <div 
-            className={`overflow-hidden transition-all duration-200 ${isExpanded ? 'max-h-none' : 'max-h-48'}`}
-            ref={contentRef}
-        >
+        <div className={`overflow-hidden transition-all duration-200 ${isExpanded ? 'max-h-none' : 'max-h-48'}`} ref={contentRef}>
           <ReactMarkdown
             components={{
               a: ({ ...props }) => (
@@ -187,7 +179,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
             </Button>
           </div>
         )}
-      <div className="flex flex-col px-sm space-y-xs mt-xs select-text pointer-events-auto relative z-50">
+      {/* <div className="flex flex-col px-sm space-y-xs mt-xs select-text pointer-events-auto relative z-50">
         <ReactMarkdown
           components={{
             a: ({ ...props }) => (
@@ -206,7 +198,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
           }}
         >
           {preprocessContent(data.isStreaming && data.streamingContent !== undefined ? data.streamingContent : data.content)}
-        </ReactMarkdown>
+        </ReactMarkdown> */}
         
         {data.documents && data.documents.length > 0 && (
           <div className="references-section mt-xs pt-xs border-t border-border z-[1000] relative">
@@ -305,6 +297,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
         </div>
       </div>
     </div>
+  // </div>
   );
 };
 

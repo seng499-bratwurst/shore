@@ -234,6 +234,7 @@ export const useCreatePromptStreaming = (
             yCoordinate: request.responseYCoordinate,
             oncApiQuery: '',
             oncApiResponse: '',
+            documents: response.documents || [],
             isHelpful: false,
             role: 'assistant',
             createdAt: new Date(),
