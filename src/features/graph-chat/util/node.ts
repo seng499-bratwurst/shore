@@ -65,6 +65,7 @@ const messageToNode = (message: Message): Node => ({
     documents: message.documents || [],
     isEditable: false,
     isLoading: false,
+    isHelpful: message.isHelpful,
   },
   id: message.id.toString(),
   draggable: true,
