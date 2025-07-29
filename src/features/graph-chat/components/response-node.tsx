@@ -65,15 +65,7 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
   const cleanContentForDisplay = (content: string): string => {
     let cleaned = content.replace(/https?:\/\/[^\s\]`]+/g, '');
     
-
-    cleaned = cleaned.replace(/for more information.*/gi, '');
-    cleaned = cleaned.replace(/for more detailed information.*/gi, '');
-    cleaned = cleaned.replace(/for more details.*/gi, '');    cleaned = cleaned.replace(/You can access the data here:?\s*/gi, '');
-    cleaned = cleaned.replace(/Visit:?\s*/gi, '');
-    cleaned = cleaned.replace(/Link:?\s*/gi, '');
-    cleaned = cleaned.replace(/URL:?\s*/gi, '');
-    cleaned = cleaned.replace(/Here is the user[^:]*:?\s*/gi, '');
-
+    cleaned = cleaned.replace(/Here is the URL.*/gi, '');
     
     cleaned = cleaned.replace(/\n\s*\n\s*\n/g, '\n\n'); 
     cleaned = cleaned.replace(/\s+/g, ' ');
