@@ -64,6 +64,7 @@ const messageToNode = (message: Message): Node => ({
     oncApiResponse: message.oncApiResponse,
     isEditable: false,
     isLoading: false,
+    isHelpful: message.isHelpful,
   },
   id: message.id.toString(),
   draggable: true,

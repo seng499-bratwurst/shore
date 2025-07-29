@@ -16,6 +16,8 @@ import { useGraphChatSettingsStore } from '../stores/graph-chat-settings-store';
 import { HandleSide } from '../types/handle';
 import { BaseNodeActions } from './node-edge-controls';
 import { NodeHandles } from './node-handles';
+import { useUpdateFeedback } from '../api/update-feedback';
+
 
 type ResponseNodeType = Node<{ 
   content: string;
@@ -27,6 +29,7 @@ type ResponseNodeType = Node<{
     sourceLink: string;
     sourceType: string;
   }>;
+  isHelpful: boolean;
 }>;
 
 const ResponseBranchControls: React.FC<{
@@ -45,12 +48,18 @@ const ResponseBranchControls: React.FC<{
 };
 
 const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
-  const [thumb, setThumb] = useState<'up' | 'down' | null>(null);
+  
   const [isExpanded, setIsExpanded] = useState(false);
   const [showExpansion, setShowExpansion] = useState(false);
   const contentRef = React.useRef<HTMLDivElement>(null);
   const { settings } = useGraphChatSettingsStore();
   const { data } = props;
+
+  const [thumb, setThumb] = useState<'up' | 'down' | null>(
+    data.isHelpful === true ? 'up' : data.isHelpful === false ? 'down' : null
+  );
+
+  const updateFeedback = useUpdateFeedback(0); 
 
   const { onBranchResponse: _onBranchResponse } = useGraphContext();
   const onBranchResponse = (position: HandleSide) => {
@@ -220,6 +229,10 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
               onClick={(e) => {
                 e.stopPropagation();
                 setThumb(thumb === 'up' ? null : 'up');
+                updateFeedback.mutate({
+                  messageId: parseInt(props.id),
+                  isHelpful: true,
+                });
               }}
             >
               {thumb === 'up' ? (
@@ -235,7 +248,12 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
               variant="link"
               onClick={(e) => {
                 e.stopPropagation();
-                setThumb(thumb === 'down' ? null : 'down');
+                const newThumb = thumb === 'down' ? null : 'down';
+                setThumb(newThumb);
+                updateFeedback.mutate({
+                  messageId: parseInt(props.id),
+                  isHelpful: false,
+                });
               }}
             >
               {thumb === 'down' ? (
