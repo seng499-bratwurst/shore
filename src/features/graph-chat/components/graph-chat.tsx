@@ -160,8 +160,16 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
         );
         setStreamingResponseId(null);
       },
-      onError: (error) => {
-        console.error('Streaming error:', error);
+      onError: (error: unknown) => {
+        let errorMessage = 'Unknown error';
+        if (error instanceof Error) {
+          errorMessage = error.message;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        } else if (error && typeof error === 'object' && 'message' in error) {
+          errorMessage = String((error as any).message);
+        }
+        console.error('Streaming error:', errorMessage);
         setStreamingResponseId(null);
       }
     },
