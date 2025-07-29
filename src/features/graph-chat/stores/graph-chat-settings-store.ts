@@ -14,12 +14,12 @@ export const useGraphChatSettingsStore = create<GraphChatSettingsStore>()(
     (set) => ({
       settings: {
         prompt: {
-          incomingSides: { left: false, right: false, top: true, bottom: false },
-          outgoingSides: { left: false, right: false, top: false, bottom: true },
+          incomingSides: { left: true, right: true, top: true, bottom: true },
+          outgoingSides: { left: true, right: true, top: true, bottom: true },
         },
         response: {
-          incomingSides: { left: false, right: false, top: true, bottom: false },
-          outgoingSides: { left: false, right: false, top: false, bottom: true },
+          incomingSides: { left: true, right: true, top: true, bottom: true },
+          outgoingSides: { left: true, right: true, top: true, bottom: true },
         },
         edgeType: 'default',
         layout: {
