@@ -16,12 +16,9 @@ import { useUpdateFeedback } from '../api/update-feedback';
 type ResponseNodeType = Node<{ 
   content: string;
   documents?: Array<{
-    id: number;
-    name: string;
-    createdAt: string;
-    uploadedBy: string;
-    sourceLink: string;
-    sourceType: string;
+    title: string;
+    content: string;
+    fileLink: string;
   }>;
   isHelpful: boolean;
 }>;
@@ -167,29 +164,29 @@ const ResponseNode: React.FC<NodeProps<ResponseNodeType>> = (props) => {
             <div className="text-xs font-medium text-muted-foreground mb-xs">References:</div>
             <div className="space-y-1">
               {data.documents.slice(0, 3).map((doc, index) => (
-                <div key={doc.id} className="text-xs flex items-start gap-2">
+                <div key={index} className="text-xs flex items-start gap-2">
                   <span className="font-medium text-primary min-w-[20px]">[{index + 1}]</span>
                   <div className="flex-1">
-                    {doc.sourceLink ? (
+                    {doc.fileLink ? (
                       <a 
-                        href={doc.sourceLink} 
+                        href={doc.fileLink} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-primary hover:underline cursor-pointer z-[1001] relative"
-                        title={`Open ${doc.name}`}
+                        title={`Open ${doc.title}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
-                          window.open(doc.sourceLink, '_blank');
+                          window.open(doc.fileLink, '_blank');
                         }}
                         onMouseDown={(e) => {
                           e.stopPropagation();
                         }}
                       >
-                        {doc.name}
+                        {doc.title}
                       </a>
                     ) : (
-                      <span className="text-muted-foreground">{doc.name}</span>
+                      <span className="text-muted-foreground">{doc.title}</span>
                     )}
                   </div>
                 </div>
