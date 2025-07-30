@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: 'Shore',
   description:
     "LLM powered interface to data from Ocean Networks Canada's Cambridge Bay Coastal Community Observatory",
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });

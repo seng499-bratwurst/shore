@@ -53,15 +53,19 @@ export const useEditProfile = () => {
   });
 };
 
-const getProfile = async (): Promise<{ name: string; email: string; ONCApiToken: string }> => {
+const getProfile = async (): Promise<{ name: string; email: string; ONCApiToken: string; role: string }> => {
   const response = await api.get('me');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const parsed = response as any;
+  const parsed = response as any;  
   const user = parsed.user;
+  const roles = parsed.roles || [];
+  const userRole = roles.length > 0 ? roles[0] : 'User';
+    
   return {
     name: user.name,
     email: user.email,
     ONCApiToken: user.ONCApiToken || null,
+    role: userRole,
   };
 };
 
@@ -73,6 +77,7 @@ export const useGetProfile = () => {
       name: data.name,
       email: data.email,
       oncToken: data.ONCApiToken,
+      role: data.role,
     }),
   });
 };
