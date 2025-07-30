@@ -46,6 +46,7 @@ import {
   newPromptCoordinates,
 } from '../util/node';
 import GraphControls from './graph-controls';
+import { TutorialButton } from './tutorial';
 
 const POSITION_UPDATE_INTERVAL = 2500; // Interval to send message position updates
 
@@ -336,7 +337,7 @@ const GraphChat: React.FC<GraphChatProps> = ({ conversationId: _conversationId }
                         },
                         data: {
                           content: data.response,
-                          documents: data.documents || [], 
+                          documents: data.documents || [],
                           oncApiQuery: '',
                           oncApiResponse: '',
                         },

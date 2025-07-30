@@ -21,13 +21,7 @@ export const TutorialButton: React.FC = () => {
     <>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleOpen}
-            className="absolute top-4 right-4 z-10 h-10 w-10"
-            aria-label="Open tutorial"
-          >
+          <Button variant="ghost" size="icon" onClick={handleOpen} aria-label="Open tutorial">
             <FiHelpCircle size={20} />
           </Button>
         </TooltipTrigger>

@@ -8,6 +8,7 @@ import { FiMaximize, FiMinusCircle, FiPlusCircle, FiSettings, FiSidebar } from '
 import { PiGraph } from 'react-icons/pi';
 import { useGraphContext } from '../contexts/graph-provider';
 import { GraphChatSettingsModal } from './graph-chat-settings-form';
+import { TutorialButton } from './tutorial';
 
 const SidebarToggleButton = () => {
   const sidebar = useSidebar();
@@ -38,6 +39,7 @@ export default function GraphControls() {
   return (
     <>
       <div className="absolute left-2.5 top-1/2 z-10 -translate-y-1/2 grid grid-cols-1 gap-2 items-center mt-[-32px]">
+        <TutorialButton />
         <Tooltip>
           <TooltipTrigger asChild>
             <Button onClick={() => zoomIn()} aria-label="Zoom in" variant="ghost" size="icon">
