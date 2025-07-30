@@ -25,7 +25,7 @@ export const TutorialButton: React.FC = () => {
             <FiHelpCircle size={20} />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="left">Tutorial</TooltipContent>
+        <TooltipContent side="right">Tutorial</TooltipContent>
       </Tooltip>
 
       <TutorialModal isOpen={isOpen} onCloseAction={handleCloseAction} />
