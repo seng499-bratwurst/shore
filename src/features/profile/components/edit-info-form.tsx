@@ -133,6 +133,14 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ onCancel }) => {
             </FormItem>
           )}
         />
+        <div>
+          <FormLabel>Role</FormLabel>
+          <Input 
+            value={profileData?.role || 'User'} 
+            disabled 
+            className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+          />
+        </div>
         <FormField
           control={form.control}
           name="email"
