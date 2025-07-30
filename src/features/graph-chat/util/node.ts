@@ -62,6 +62,7 @@ const messageToNode = (message: Message): Node => ({
     content: message.content,
     oncApiQuery: message.oncApiQuery,
     oncApiResponse: message.oncApiResponse,
+    documents: message.documents || [],
     isEditable: false,
     isLoading: false,
     isHelpful: message.isHelpful,

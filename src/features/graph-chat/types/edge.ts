@@ -3,8 +3,10 @@ import { HandleId } from './handle';
 
 type Edge = {
   id: number;
-  sourceMessageId: number;
-  targetMessageId: number;
+  sourceMessageId?: number; // Keep both for compatibility
+  targetMessageId?: number;
+  SourceMessageId?: number; // Backend uses capitalized names
+  TargetMessageId?: number;
   sourceHandle: HandleId; // Default to "bottom" if not provided
   targetHandle: HandleId; // Default to "top" if not provided
 };

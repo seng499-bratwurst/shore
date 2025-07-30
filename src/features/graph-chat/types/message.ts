@@ -10,6 +10,14 @@ type Message = {
   xCoordinate: number;
   yCoordinate: number;
   createdAt: Date;
+  documents?: Array<{
+    id: number;
+    name: string;
+    createdAt: string;
+    uploadedBy: string;
+    sourceLink: string;
+    sourceType: string;
+  }>;
 };
 
 export type { Message };

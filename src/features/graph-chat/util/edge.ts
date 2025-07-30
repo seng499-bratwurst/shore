@@ -35,10 +35,19 @@ const createTemporaryEdge = (
 const messageEdgeToReactFlowEdge = (edge: Edge): ReactFlowEdge => {
   const edgeType = useGraphChatSettingsStore.getState().settings.edgeType;
 
+  // Handle both capitalized (backend) and lowercase (frontend) field names
+  const sourceMessageId = edge.sourceMessageId || edge.SourceMessageId;
+  const targetMessageId = edge.targetMessageId || edge.TargetMessageId;
+
+  // Add null checks to prevent toString() errors
+  if (!sourceMessageId || !targetMessageId) {
+    throw new Error(`Invalid edge data: sourceMessageId=${sourceMessageId}, targetMessageId=${targetMessageId}`);
+  }
+
   return {
-    id: createEdgeId(edge.sourceMessageId, edge.targetMessageId),
-    source: edge.sourceMessageId.toString(),
-    target: edge.targetMessageId.toString(),
+    id: createEdgeId(sourceMessageId, targetMessageId),
+    source: sourceMessageId.toString(),
+    target: targetMessageId.toString(),
     sourceHandle: edge.sourceHandle,
     targetHandle: edge.targetHandle,
     markerEnd: targetArrow,
